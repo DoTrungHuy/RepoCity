@@ -85,8 +85,8 @@ export function buildCityLayout(graph: RepoGraph, timelineIndex: number): { buil
       if (!source || !target) return undefined;
       return {
         id: edge.id,
-        from: [source.position[0], source.position[1] + source.scale[1] / 2 + 0.2, source.position[2]] as [number, number, number],
-        to: [target.position[0], target.position[1] + target.scale[1] / 2 + 0.2, target.position[2]] as [number, number, number]
+        from: [source.position[0], 0.16, source.position[2]] as [number, number, number],
+        to: [target.position[0], 0.16, target.position[2]] as [number, number, number]
       };
     })
     .filter((line): line is CityLine => Boolean(line));

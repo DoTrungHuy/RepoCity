@@ -78,6 +78,18 @@ describe("App", () => {
     await userEvent.click(screen.getByRole("button", { name: /summarize/i }));
     await waitFor(() => expect(screen.getByText("Cloud summaries are disabled.")).toBeInTheDocument());
   });
+
+  it("collapses and reopens the repository controls", async () => {
+    render(<App />);
+    expect(await screen.findByLabelText(/city source/i)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /collapse repository controls/i }));
+    expect(screen.queryByLabelText(/city source/i)).not.toBeInTheDocument();
+    expect(screen.getByText("RepoCity")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /open repository controls/i }));
+    expect(await screen.findByLabelText(/city source/i)).toBeInTheDocument();
+  });
 });
 
 function jsonResponse(body: unknown, status = 200) {

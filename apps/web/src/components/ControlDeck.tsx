@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import type { ImportRequest, LocalCandidate, RepoGraph, RepoSummary, ScanTask } from "@repocity/shared";
-import { Github, HardDrive, Loader2, Map, RadioTower } from "lucide-react";
+import { ChevronDown, ChevronUp, Github, HardDrive, Loader2, Map, RadioTower } from "lucide-react";
 
 interface ControlDeckProps {
   repositories: RepoSummary[];
@@ -25,6 +25,7 @@ export function ControlDeck({
 }: ControlDeckProps) {
   const [importType, setImportType] = useState<ImportRequest["type"]>("github");
   const [urlOrPath, setUrlOrPath] = useState("https://github.com/vitejs/vite");
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     if (importType === "local" && localCandidates[0]) {
@@ -43,9 +44,50 @@ export function ControlDeck({
   const fileCount = graph?.nodes.filter((node) => node.kind === "file").length ?? 0;
   const importEdges = graph?.edges.filter((edge) => edge.kind === "imports").length ?? 0;
   const topLanguages = graph?.languages.slice(0, 5) ?? [];
+  const currentStatus = scan?.message ?? status;
+
+  if (isCollapsed) {
+    return (
+      <section className="control-deck is-collapsed" aria-label="Repository controls">
+        <button
+          type="button"
+          className="deck-toggle"
+          aria-label="Open repository controls"
+          aria-expanded="false"
+          title="Open controls"
+          onClick={() => setIsCollapsed(false)}
+        >
+          <ChevronDown size={18} />
+        </button>
+        <div className="brand-row">
+          <div className="brand-mark">
+            <Map size={20} />
+          </div>
+          <div>
+            <h1>RepoCity</h1>
+            <p>{graph?.name ?? "Repository to 3D code city"}</p>
+          </div>
+        </div>
+        <div className="status-line">
+          <span className={scan?.status === "failed" ? "status-dot error" : "status-dot"} />
+          <span>{currentStatus}</span>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="control-deck" aria-label="Repository controls">
+      <button
+        type="button"
+        className="deck-toggle"
+        aria-label="Collapse repository controls"
+        aria-expanded="true"
+        title="Collapse controls"
+        onClick={() => setIsCollapsed(true)}
+      >
+        <ChevronUp size={18} />
+      </button>
       <div className="brand-row">
         <div className="brand-mark">
           <Map size={22} />
@@ -118,7 +160,7 @@ export function ControlDeck({
 
       <div className="status-line">
         <span className={scan?.status === "failed" ? "status-dot error" : "status-dot"} />
-        <span>{scan?.message ?? status}</span>
+        <span>{currentStatus}</span>
       </div>
 
       {topLanguages.length ? (

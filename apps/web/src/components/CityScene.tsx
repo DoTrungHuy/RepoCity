@@ -1,6 +1,6 @@
 import { useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Edges, Grid, Html, Line, OrbitControls } from "@react-three/drei";
+import { ContactShadows, Edges, Grid, Html, Line, OrbitControls } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import type { Mesh } from "three";
 import type { RepoGraph } from "@repocity/shared";
@@ -12,6 +12,41 @@ interface CitySceneProps {
   timelineIndex: number;
   onSelectNode: (nodeId: string) => void;
 }
+
+type DistrictPad = {
+  district: string;
+  position: [number, number, number];
+  scale: [number, number, number];
+};
+
+type CityBounds = {
+  center: [number, number, number];
+  size: [number, number, number];
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+};
+
+type ParkPatch = {
+  id: string;
+  position: [number, number, number];
+  size: [number, number];
+  tone: string;
+};
+
+type TreeMarker = {
+  id: string;
+  position: [number, number, number];
+  scale: number;
+  tone: string;
+};
+
+type RoadStripData = {
+  id: string;
+  position: [number, number, number];
+  size: [number, number];
+};
 
 export function CityScene({ graph, selectedNodeId, timelineIndex, onSelectNode }: CitySceneProps) {
   const layout = useMemo(() => buildCityLayout(graph, timelineIndex), [graph, timelineIndex]);
@@ -41,8 +76,10 @@ export function CityScene({ graph, selectedNodeId, timelineIndex, onSelectNode }
           scale: [Math.max(8, maxX - minX + 5), 1, Math.max(8, maxZ - minZ + 5)] as [number, number, number]
         };
       })
-      .filter((entry): entry is { district: string; position: [number, number, number]; scale: [number, number, number] } => Boolean(entry));
+      .filter((entry): entry is DistrictPad => Boolean(entry));
   }, [layout]);
+  const cityBounds = useMemo(() => computeCityBounds(layout.buildings, districtPads), [layout.buildings, districtPads]);
+  const landscape = useMemo(() => buildLandscape(districtPads, cityBounds), [districtPads, cityBounds]);
 
   return (
     <Canvas camera={{ position: [34, 30, 42], fov: 46 }} dpr={[1, 1.8]} shadows>
@@ -52,28 +89,34 @@ export function CityScene({ graph, selectedNodeId, timelineIndex, onSelectNode }
       <directionalLight position={[16, 28, 12]} intensity={1.45} castShadow color="#F4F0E8" />
       <pointLight position={[-24, 16, -18]} intensity={0.9} color="#F2C14E" />
       <pointLight position={[22, 18, 18]} intensity={0.75} color="#9BE7C4" />
+      <CityTerrain bounds={cityBounds} />
       <PulseRing />
       <Grid
-        position={[0, -0.02, 0]}
-        args={[96, 96]}
+        position={[0, 0.018, 0]}
+        args={[Math.max(96, cityBounds.size[0] + 18), Math.max(96, cityBounds.size[2] + 18)]}
         cellSize={2}
-        cellThickness={0.5}
+        cellThickness={0.35}
         sectionSize={12}
         sectionThickness={1}
-        cellColor="#2b3028"
-        sectionColor="#586450"
+        cellColor="#263023"
+        sectionColor="#586b4f"
         fadeDistance={82}
         fadeStrength={1.2}
       />
+      <RoadNetwork roads={landscape.roads} />
       {districtPads.map((pad) => (
-        <mesh key={pad.district} position={pad.position} scale={pad.scale} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={[1, 1]} />
-          <meshStandardMaterial color="#132018" emissive="#132018" emissiveIntensity={0.25} transparent opacity={0.34} roughness={0.8} />
+        <mesh key={pad.district} position={pad.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[pad.scale[0], pad.scale[2]]} />
+          <meshStandardMaterial color="#172319" emissive="#172319" emissiveIntensity={0.18} transparent opacity={0.78} roughness={0.88} />
           <Edges color="#9BE7C4" />
         </mesh>
       ))}
+      <GreenSpaces parks={landscape.parks} />
       {layout.lines.map((line) => (
-        <Line key={line.id} points={[line.from, line.to]} color="#A6F6FF" opacity={0.46} transparent lineWidth={1.4} />
+        <Line key={`${line.id}-road`} points={[line.from, line.to]} color="#0A110C" opacity={0.72} transparent lineWidth={7.2} />
+      ))}
+      {layout.lines.map((line) => (
+        <Line key={line.id} points={[line.from, line.to]} color="#A6F6FF" opacity={0.52} transparent lineWidth={1.7} />
       ))}
       {layout.buildings.map((building) => (
         <Building
@@ -83,6 +126,8 @@ export function CityScene({ graph, selectedNodeId, timelineIndex, onSelectNode }
           onSelect={() => onSelectNode(building.node.id)}
         />
       ))}
+      <StreetTrees trees={landscape.trees} />
+      <ContactShadows position={[0, 0.03, 0]} opacity={0.52} scale={Math.max(80, cityBounds.size[0] + 30)} blur={2.8} far={22} color="#000000" />
       {labelPositions.map((label) => (
         <Html key={label.district} position={[label.x, 0.15, label.z]} center distanceFactor={18} zIndexRange={[3, 0]} className="district-label">
           {label.district}
@@ -90,6 +135,91 @@ export function CityScene({ graph, selectedNodeId, timelineIndex, onSelectNode }
       ))}
       <OrbitControls makeDefault enableDamping dampingFactor={0.08} minDistance={18} maxDistance={92} maxPolarAngle={Math.PI * 0.47} />
     </Canvas>
+  );
+}
+
+function CityTerrain({ bounds }: { bounds: CityBounds }) {
+  const width = Math.max(72, bounds.size[0] + 18);
+  const depth = Math.max(72, bounds.size[2] + 18);
+  return (
+    <group position={[bounds.center[0], 0, bounds.center[2]]}>
+      <mesh position={[0, -0.2, 0]} scale={[width, 0.32, depth]} receiveShadow>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#0A100B" roughness={0.96} metalness={0.04} />
+        <Edges color="#263823" threshold={8} />
+      </mesh>
+      <mesh position={[0, -0.025, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[width, depth]} />
+        <meshStandardMaterial
+          color="#1C2118"
+          roughness={0.94}
+          metalness={0.02}
+          emissive="#10170F"
+          emissiveIntensity={0.18}
+        />
+      </mesh>
+      <mesh position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 4]}>
+        <ringGeometry args={[Math.max(width, depth) * 0.38, Math.max(width, depth) * 0.385, 4]} />
+        <meshBasicMaterial color="#D6B35A" transparent opacity={0.18} />
+      </mesh>
+    </group>
+  );
+}
+
+function RoadNetwork({ roads }: { roads: RoadStripData[] }) {
+  return (
+    <>
+      {roads.map((road) => (
+        <mesh key={road.id} position={road.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={road.size} />
+          <meshStandardMaterial color="#101611" roughness={0.78} metalness={0.08} emissive="#080D09" emissiveIntensity={0.16} />
+          <Edges color="#3A4638" threshold={8} />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+function GreenSpaces({ parks }: { parks: ParkPatch[] }) {
+  return (
+    <>
+      {parks.map((park) => (
+        <mesh key={park.id} position={park.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={park.size} />
+          <meshStandardMaterial color={park.tone} roughness={0.98} metalness={0} emissive="#1F3A23" emissiveIntensity={0.18} />
+          <Edges color="#8ECF7C" threshold={8} />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+function StreetTrees({ trees }: { trees: TreeMarker[] }) {
+  return (
+    <>
+      {trees.map((tree) => (
+        <Tree key={tree.id} marker={tree} />
+      ))}
+    </>
+  );
+}
+
+function Tree({ marker }: { marker: TreeMarker }) {
+  return (
+    <group position={marker.position} scale={marker.scale}>
+      <mesh position={[0, 0.22, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.055, 0.085, 0.44, 6]} />
+        <meshStandardMaterial color="#6D5635" roughness={0.86} metalness={0.02} />
+      </mesh>
+      <mesh position={[0, 0.62, 0]} castShadow receiveShadow>
+        <coneGeometry args={[0.32, 0.72, 7]} />
+        <meshStandardMaterial color={marker.tone} roughness={0.9} metalness={0.02} />
+      </mesh>
+      <mesh position={[0, 0.98, 0]} castShadow receiveShadow>
+        <icosahedronGeometry args={[0.22, 0]} />
+        <meshStandardMaterial color="#B5E48C" roughness={0.88} metalness={0} emissive="#1F3A23" emissiveIntensity={0.12} />
+      </mesh>
+    </group>
   );
 }
 
@@ -110,12 +240,39 @@ function Building({ building, selected, onSelect }: { building: CityBuilding; se
         document.body.style.cursor = "default";
       }}
     >
+      <BuildingPlot building={building} selected={selected} />
       <BuildingBody building={building} color={color} edgeColor={edgeColor} selected={selected} />
       {selected ? (
         <Html position={[0, building.scale[1] / 2 + 1.1, 0]} center distanceFactor={16} zIndexRange={[4, 0]} className="building-callout">
           {building.node.name}
         </Html>
       ) : null}
+    </group>
+  );
+}
+
+function BuildingPlot({ building, selected }: { building: CityBuilding; selected: boolean }) {
+  const [w, h, d] = building.scale;
+  const plotWidth = Math.max(1.7, w + 0.9);
+  const plotDepth = Math.max(1.7, d + 0.9);
+  const edgeColor = selected ? "#F2C14E" : building.active ? building.accentColor : "#4A5548";
+  return (
+    <group position={[0, -h / 2 + 0.04, 0]}>
+      <mesh scale={[plotWidth, 0.08, plotDepth]} castShadow receiveShadow>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial
+          color={building.active ? "#111A13" : "#151815"}
+          roughness={0.86}
+          metalness={0.12}
+          emissive={building.active ? "#0E160F" : "#000000"}
+          emissiveIntensity={0.2}
+        />
+        <Edges color={edgeColor} threshold={8} />
+      </mesh>
+      <mesh position={[0, 0.052, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[plotWidth * 0.74, plotDepth * 0.74]} />
+        <meshBasicMaterial color={building.glowColor} transparent opacity={building.active ? 0.12 : 0.04} />
+      </mesh>
     </group>
   );
 }
@@ -154,7 +311,7 @@ function BuildingBody({
     case "archive":
       return (
         <>
-          <BoxPart position={[0, -h * 0.08, 0]} scale={[w, h * 0.62, d]} material={material()} edgeColor={edgeColor} />
+          <BoxPart position={[0, -h * 0.19, 0]} scale={[w, h * 0.62, d]} material={material()} edgeColor={edgeColor} />
           <BoxPart position={[0, h * 0.33, 0]} scale={[w * 1.1, h * 0.12, d * 1.08]} material={material()} edgeColor={edgeColor} />
           <BoxPart position={[0, h * 0.49, 0]} scale={[w * 0.92, h * 0.12, d * 0.92]} material={material()} edgeColor={edgeColor} />
           <BoxPart position={[-w * 0.36, h * 0.5 + 0.34, 0]} scale={[0.12, h * 0.26, d * 0.7]} material={material()} edgeColor={building.accentColor} />
@@ -232,7 +389,7 @@ function BuildingBody({
     case "test":
       return (
         <>
-          <BoxPart position={[0, -h * 0.08, 0]} scale={[w, h * 0.74, d]} material={material()} edgeColor={edgeColor} />
+          <BoxPart position={[0, -h * 0.13, 0]} scale={[w, h * 0.74, d]} material={material()} edgeColor={edgeColor} />
           <mesh position={[0, h * 0.43, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <torusGeometry args={[Math.max(w, d) * 0.54, 0.055, 8, 40]} />
             <meshBasicMaterial color={building.glowColor} transparent opacity={accentOpacity} />
@@ -467,12 +624,137 @@ function DataCores({ width, height, depth, color, opacity }: { width: number; he
   );
 }
 
+function computeCityBounds(buildings: CityBuilding[], pads: DistrictPad[]): CityBounds {
+  const xs: number[] = [];
+  const zs: number[] = [];
+
+  for (const pad of pads) {
+    xs.push(pad.position[0] - pad.scale[0] / 2, pad.position[0] + pad.scale[0] / 2);
+    zs.push(pad.position[2] - pad.scale[2] / 2, pad.position[2] + pad.scale[2] / 2);
+  }
+  for (const building of buildings) {
+    xs.push(building.position[0] - building.scale[0] / 2, building.position[0] + building.scale[0] / 2);
+    zs.push(building.position[2] - building.scale[2] / 2, building.position[2] + building.scale[2] / 2);
+  }
+
+  if (!xs.length || !zs.length) {
+    return {
+      center: [0, 0, 0],
+      size: [72, 1, 72],
+      minX: -36,
+      maxX: 36,
+      minZ: -36,
+      maxZ: 36
+    };
+  }
+
+  const minX = Math.min(...xs) - 8;
+  const maxX = Math.max(...xs) + 8;
+  const minZ = Math.min(...zs) - 8;
+  const maxZ = Math.max(...zs) + 8;
+  return {
+    center: [(minX + maxX) / 2, 0, (minZ + maxZ) / 2],
+    size: [maxX - minX, 1, maxZ - minZ],
+    minX,
+    maxX,
+    minZ,
+    maxZ
+  };
+}
+
+function buildLandscape(
+  pads: DistrictPad[],
+  bounds: CityBounds
+): { roads: RoadStripData[]; parks: ParkPatch[]; trees: TreeMarker[] } {
+  const roads: RoadStripData[] = [];
+  const parks: ParkPatch[] = [];
+  const trees: TreeMarker[] = [];
+  const treeTones = ["#5FAF5E", "#76B852", "#8ECF7C", "#4F8F57"];
+
+  pads.forEach((pad, padIndex) => {
+    const [x, , z] = pad.position;
+    const [width, , depth] = pad.scale;
+    const roadWidth = 1.18;
+    const key = pad.district.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || `district-${padIndex}`;
+
+    roads.push(
+      {
+        id: `${key}-north-road`,
+        position: [x, 0.045, z - depth / 2 - roadWidth * 0.2],
+        size: [width + 2.4, roadWidth]
+      },
+      {
+        id: `${key}-south-road`,
+        position: [x, 0.045, z + depth / 2 + roadWidth * 0.2],
+        size: [width + 2.4, roadWidth]
+      },
+      {
+        id: `${key}-west-road`,
+        position: [x - width / 2 - roadWidth * 0.2, 0.046, z],
+        size: [roadWidth, depth + 2.4]
+      },
+      {
+        id: `${key}-east-road`,
+        position: [x + width / 2 + roadWidth * 0.2, 0.046, z],
+        size: [roadWidth, depth + 2.4]
+      }
+    );
+
+    if (width > 6.5 && depth > 6.5) {
+      const parkWidth = clampNumber(width * 0.24, 2.2, 5.8);
+      const parkDepth = clampNumber(depth * 0.2, 1.8, 4.6);
+      parks.push(
+        {
+          id: `${key}-park-a`,
+          position: [x - width / 2 + parkWidth / 2 + 0.6, 0.064, z + depth / 2 - parkDepth / 2 - 0.6],
+          size: [parkWidth, parkDepth],
+          tone: padIndex % 2 ? "#274A28" : "#234226"
+        },
+        {
+          id: `${key}-park-b`,
+          position: [x + width / 2 - parkWidth / 2 - 0.6, 0.064, z - depth / 2 + parkDepth / 2 + 0.6],
+          size: [parkWidth * 0.82, parkDepth * 0.86],
+          tone: padIndex % 2 ? "#213B24" : "#2B512B"
+        }
+      );
+    }
+
+    const treePoints: [number, number][] = [
+      [x - width / 2 + 0.8, z - depth / 2 + 0.8],
+      [x + width / 2 - 0.8, z - depth / 2 + 0.8],
+      [x - width / 2 + 0.8, z + depth / 2 - 0.8],
+      [x + width / 2 - 0.8, z + depth / 2 - 0.8],
+      [x - width * 0.24, z - depth / 2 + 0.82],
+      [x + width * 0.24, z + depth / 2 - 0.82],
+      [x - width / 2 + 0.82, z + depth * 0.22],
+      [x + width / 2 - 0.82, z - depth * 0.22]
+    ];
+
+    treePoints.forEach(([treeX, treeZ], treeIndex) => {
+      if (treeX < bounds.minX || treeX > bounds.maxX || treeZ < bounds.minZ || treeZ > bounds.maxZ) return;
+      const seed = seededNumber(`${pad.district}-${treeIndex}`);
+      trees.push({
+        id: `${key}-tree-${treeIndex}`,
+        position: [treeX, 0.055, treeZ],
+        scale: clampNumber(0.78 + seed * 0.46, 0.72, 1.18),
+        tone: treeTones[(padIndex + treeIndex) % treeTones.length]
+      });
+    });
+  });
+
+  return { roads, parks, trees };
+}
+
 function seededNumber(value: string): number {
   let hash = 0;
   for (let index = 0; index < value.length; index += 1) {
     hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
   }
   return (hash % 1000) / 1000;
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 function clampInt(value: number, min: number, max: number): number {
