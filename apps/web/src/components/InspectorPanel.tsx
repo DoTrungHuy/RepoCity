@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { AiSummaryResponse, RepoGraph, RepoNode } from "@repocity/shared";
 import { BrainCircuit, FileCode2, Radar, ShieldCheck } from "lucide-react";
 import { buildingProfileForNode } from "../lib/layout";
+import { GlassSurface } from "./GlassSurface";
 
 interface InspectorPanelProps {
   graph?: RepoGraph;
@@ -18,7 +19,7 @@ export function InspectorPanel({ graph, node, summary, summaryLoading, onSummari
   const profile = node ? buildingProfileForNode(node) : undefined;
 
   return (
-    <aside className={`inspector ${node ? "is-active" : "is-compact"}`} aria-label="File inspector">
+    <GlassSurface as="aside" className={`inspector ${node ? "is-active" : "is-compact"}`} variant="panel" intensity="strong" radius={20} aria-label="File inspector">
       <div className="panel-title">
         <FileCode2 size={18} />
         <span>{node ? node.name : "Select a building"}</span>
@@ -74,7 +75,7 @@ export function InspectorPanel({ graph, node, summary, summaryLoading, onSummari
           <span>Telemetry channel idle.</span>
         </div>
       )}
-    </aside>
+    </GlassSurface>
   );
 }
 

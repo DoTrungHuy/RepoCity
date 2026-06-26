@@ -1,5 +1,6 @@
 import type { TimelinePoint } from "@repocity/shared";
 import { Clock3 } from "lucide-react";
+import { GlassSurface } from "./GlassSurface";
 
 interface TimelineBarProps {
   timeline: TimelinePoint[];
@@ -11,7 +12,7 @@ export function TimelineBar({ timeline, value, onChange }: TimelineBarProps) {
   if (!timeline.length) return null;
   const selected = timeline[value] ?? timeline.at(-1)!;
   return (
-    <section className="timeline-bar" aria-label="Commit timeline">
+    <GlassSurface as="section" className="timeline-bar" variant="bar" intensity="medium" radius={18} aria-label="Commit timeline">
       <div className="timeline-readout">
         <Clock3 size={16} />
         <span>{selected.label}</span>
@@ -26,7 +27,6 @@ export function TimelineBar({ timeline, value, onChange }: TimelineBarProps) {
         onChange={(event) => onChange(Number(event.target.value))}
         aria-label="Timeline month"
       />
-    </section>
+    </GlassSurface>
   );
 }
-

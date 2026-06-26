@@ -3,6 +3,8 @@ import type { AiSummaryResponse, ImportRequest, LocalCandidate, RepoGraph, RepoN
 import { AlertCircle, Building2 } from "lucide-react";
 import { CityScene } from "./components/CityScene";
 import { ControlDeck } from "./components/ControlDeck";
+import { CosmicBackdrop } from "./components/CosmicBackdrop";
+import { GlassSurface } from "./components/GlassSurface";
 import { InspectorPanel } from "./components/InspectorPanel";
 import { TimelineBar } from "./components/TimelineBar";
 import { importRepository, listRepositories, loadGraph, loadScan, summarizeNode } from "./lib/api";
@@ -86,7 +88,7 @@ export function App() {
 
   return (
     <main className="app-shell">
-      <LiquidBackdrop />
+      <CosmicBackdrop />
       <div className="scene-layer">
         {graph ? (
           <CityScene graph={graph} selectedNodeId={selectedNodeId} timelineIndex={timelineIndex} onSelectNode={setSelectedNodeId} />
@@ -120,45 +122,11 @@ export function App() {
       {graph ? <TimelineBar timeline={graph.timeline} value={timelineIndex} onChange={setTimelineIndex} /> : null}
 
       {scan?.status === "failed" ? (
-        <div className="toast error" role="alert">
+        <GlassSurface className="toast error" variant="panel" intensity="medium" radius={16} role="alert">
           <AlertCircle size={16} />
           <span>{scan.error}</span>
-        </div>
+        </GlassSurface>
       ) : null}
     </main>
-  );
-}
-
-function LiquidBackdrop() {
-  return (
-    <>
-      <svg className="glass-filter-defs" aria-hidden="true" focusable="false">
-        <filter id="repocity-liquid-distortion">
-          <feTurbulence type="fractalNoise" baseFrequency="0.008 0.018" numOctaves="2" seed="7" result="noise">
-            <animate attributeName="baseFrequency" values="0.006 0.014; 0.012 0.022; 0.007 0.017" dur="18s" repeatCount="indefinite" />
-          </feTurbulence>
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale="28" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-      </svg>
-      <div className="liquid-atmosphere" aria-hidden="true">
-        <div className="liquid-field" />
-        <div className="refractive-shell shell-a">
-          <span />
-          <span />
-        </div>
-        <div className="refractive-shell shell-b">
-          <span />
-          <span />
-        </div>
-        <div className="refractive-shell shell-c">
-          <span />
-          <span />
-        </div>
-        <div className="liquid-current current-a" />
-        <div className="liquid-current current-b" />
-        <div className="liquid-current current-c" />
-        <div className="glass-caustics" />
-      </div>
-    </>
   );
 }

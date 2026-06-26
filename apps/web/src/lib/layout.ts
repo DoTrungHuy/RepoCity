@@ -30,7 +30,7 @@ export interface CityLine {
   to: [number, number, number];
 }
 
-const fallbackColors = ["#63C7FF", "#F2C14E", "#6EE7B7", "#F472B6", "#C084FC", "#FDBA74"];
+const fallbackColors = ["#7CC7E4", "#E9C36F", "#8ED7BF", "#A9B8C7", "#B8BFF0", "#D6A98B"];
 
 export function buildCityLayout(graph: RepoGraph, timelineIndex: number): { buildings: CityBuilding[]; lines: CityLine[]; districts: string[] } {
   const fileNodes = graph.nodes.filter((node) => node.kind === "file");
@@ -110,9 +110,9 @@ export function buildingProfileForNode(node: RepoNode): BuildingProfile {
       widthFactor: 1.15,
       depthFactor: 1.15,
       heightFactor: 0.78,
-      baseColor: "#6EE7B7",
-      accentColor: "#F4F0E8",
-      glowColor: "#9BE7C4"
+      baseColor: "#88A9A8",
+      accentColor: "#8BBE9D",
+      glowColor: "#C8F0D8"
     };
   }
   if (language === "Markdown" || lowerPath.startsWith("docs/") || name === "readme.md") {
@@ -122,9 +122,9 @@ export function buildingProfileForNode(node: RepoNode): BuildingProfile {
       widthFactor: 1.9,
       depthFactor: 1.25,
       heightFactor: 0.45,
-      baseColor: "#D8D3C4",
-      accentColor: "#F2C14E",
-      glowColor: "#FFF1B8"
+      baseColor: "#A99F8E",
+      accentColor: "#D7B76F",
+      glowColor: "#FFF0BD"
     };
   }
   if (
@@ -138,9 +138,9 @@ export function buildingProfileForNode(node: RepoNode): BuildingProfile {
       widthFactor: 1.25,
       depthFactor: 1.25,
       heightFactor: 0.72,
-      baseColor: "#B7F542",
-      accentColor: "#F2C14E",
-      glowColor: "#D9FF7A"
+      baseColor: "#9DAEAA",
+      accentColor: "#DDB95F",
+      glowColor: "#F7E6A4"
     };
   }
   if (lowerPath.startsWith("scripts/") || lowerPath.includes("/bin/") || name.includes("cli")) {
@@ -150,9 +150,9 @@ export function buildingProfileForNode(node: RepoNode): BuildingProfile {
       widthFactor: 0.72,
       depthFactor: 0.72,
       heightFactor: 1.36,
-      baseColor: "#F2C14E",
-      accentColor: "#FF8A3D",
-      glowColor: "#FFD166"
+      baseColor: "#A79982",
+      accentColor: "#D09B63",
+      glowColor: "#F3D49A"
     };
   }
   if (language === "CSS" || name.endsWith(".scss")) {
@@ -162,9 +162,9 @@ export function buildingProfileForNode(node: RepoNode): BuildingProfile {
       widthFactor: 1.9,
       depthFactor: 0.42,
       heightFactor: 0.95,
-      baseColor: "#F472B6",
-      accentColor: "#63C7FF",
-      glowColor: "#FF9BD5"
+      baseColor: "#9CAABA",
+      accentColor: "#8DBDD5",
+      glowColor: "#C8EAFE"
     };
   }
   if (["React", "Vue", "Svelte", "HTML"].includes(language) || lowerPath.includes("/client/") || lowerPath.includes("/ui/")) {
@@ -174,9 +174,9 @@ export function buildingProfileForNode(node: RepoNode): BuildingProfile {
       widthFactor: 1.28,
       depthFactor: 0.86,
       heightFactor: 1.08,
-      baseColor: "#63C7FF",
-      accentColor: "#F472B6",
-      glowColor: "#A6F6FF"
+      baseColor: "#86AABD",
+      accentColor: "#86C6DD",
+      glowColor: "#BDEEFF"
     };
   }
   if (lowerPath.includes("/server/") || lowerPath.includes("/api/") || lowerPath.includes("/service") || lowerPath.includes("/ssr/")) {
@@ -186,9 +186,9 @@ export function buildingProfileForNode(node: RepoNode): BuildingProfile {
       widthFactor: 0.92,
       depthFactor: 0.92,
       heightFactor: 1.26,
-      baseColor: "#FF8A3D",
-      accentColor: "#A6F6FF",
-      glowColor: "#FFC857"
+      baseColor: "#8D99A5",
+      accentColor: "#D4A35E",
+      glowColor: "#A9DAF2"
     };
   }
   if (language === "Other") {
@@ -198,9 +198,9 @@ export function buildingProfileForNode(node: RepoNode): BuildingProfile {
       widthFactor: 1.18,
       depthFactor: 1.18,
       heightFactor: 0.65,
-      baseColor: "#A78BFA",
-      accentColor: "#9BE7C4",
-      glowColor: "#C4B5FD"
+      baseColor: "#9A94AD",
+      accentColor: "#AFA9CE",
+      glowColor: "#DCD5FF"
     };
   }
   return {
@@ -209,8 +209,8 @@ export function buildingProfileForNode(node: RepoNode): BuildingProfile {
     widthFactor: 1,
     depthFactor: 1,
     heightFactor: 1,
-    baseColor: "#67E8F9",
-    accentColor: "#F2C14E",
-    glowColor: "#A6F6FF"
+    baseColor: "#93A8B6",
+    accentColor: "#D7B76F",
+    glowColor: "#BDEEFF"
   };
 }

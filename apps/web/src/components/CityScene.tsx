@@ -2,7 +2,7 @@ import { useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { ContactShadows, Edges, Grid, Html, Line, OrbitControls } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import type { Mesh } from "three";
+import { AdditiveBlending, type Mesh } from "three";
 import type { RepoGraph } from "@repocity/shared";
 import { buildCityLayout, type CityBuilding } from "../lib/layout";
 
@@ -82,41 +82,40 @@ export function CityScene({ graph, selectedNodeId, timelineIndex, onSelectNode }
   const landscape = useMemo(() => buildLandscape(districtPads, cityBounds), [districtPads, cityBounds]);
 
   return (
-    <Canvas camera={{ position: [34, 30, 42], fov: 46 }} dpr={[1, 1.8]} shadows>
-      <color attach="background" args={["#050706"]} />
-      <fog attach="fog" args={["#050706", 38, 118]} />
-      <ambientLight intensity={0.42} />
-      <directionalLight position={[16, 28, 12]} intensity={1.45} castShadow color="#F4F0E8" />
-      <pointLight position={[-24, 16, -18]} intensity={0.9} color="#F2C14E" />
-      <pointLight position={[22, 18, 18]} intensity={0.75} color="#9BE7C4" />
+    <Canvas camera={{ position: [34, 30, 42], fov: 46 }} dpr={[1, 1.8]} gl={{ alpha: true, antialias: true }} shadows>
+      <fog attach="fog" args={["#0b1728", 42, 132]} />
+      <ambientLight intensity={0.42} color="#B8DDF5" />
+      <directionalLight position={[16, 30, 12]} intensity={0.92} castShadow color="#DDEFFF" />
+      <pointLight position={[-24, 16, -18]} intensity={0.62} color="#F0C76D" />
+      <pointLight position={[22, 18, 18]} intensity={0.86} color="#79D5FF" />
       <CityTerrain bounds={cityBounds} />
       <PulseRing />
       <Grid
         position={[0, 0.018, 0]}
         args={[Math.max(96, cityBounds.size[0] + 18), Math.max(96, cityBounds.size[2] + 18)]}
         cellSize={2}
-        cellThickness={0.35}
+        cellThickness={0.32}
         sectionSize={12}
         sectionThickness={1}
-        cellColor="#263023"
-        sectionColor="#586b4f"
+        cellColor="#34566a"
+        sectionColor="#7bbfd9"
         fadeDistance={82}
-        fadeStrength={1.2}
+        fadeStrength={1.05}
       />
       <RoadNetwork roads={landscape.roads} />
       {districtPads.map((pad) => (
         <mesh key={pad.district} position={pad.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={[pad.scale[0], pad.scale[2]]} />
-          <meshStandardMaterial color="#172319" emissive="#172319" emissiveIntensity={0.18} transparent opacity={0.78} roughness={0.88} />
-          <Edges color="#9BE7C4" />
+          <meshStandardMaterial color="#294052" emissive="#123247" emissiveIntensity={0.16} transparent opacity={0.82} roughness={0.8} metalness={0.14} />
+          <Edges color="#8ad8f6" />
         </mesh>
       ))}
       <GreenSpaces parks={landscape.parks} />
       {layout.lines.map((line) => (
-        <Line key={`${line.id}-road`} points={[line.from, line.to]} color="#0A110C" opacity={0.72} transparent lineWidth={7.2} />
+        <Line key={`${line.id}-road`} points={[line.from, line.to]} color="#21384a" opacity={0.76} transparent lineWidth={7.2} />
       ))}
       {layout.lines.map((line) => (
-        <Line key={line.id} points={[line.from, line.to]} color="#A6F6FF" opacity={0.52} transparent lineWidth={1.7} />
+        <Line key={line.id} points={[line.from, line.to]} color="#6fb9d3" opacity={0.42} transparent lineWidth={1.7} />
       ))}
       {layout.buildings.map((building) => (
         <Building
@@ -127,7 +126,7 @@ export function CityScene({ graph, selectedNodeId, timelineIndex, onSelectNode }
         />
       ))}
       <StreetTrees trees={landscape.trees} />
-      <ContactShadows position={[0, 0.03, 0]} opacity={0.52} scale={Math.max(80, cityBounds.size[0] + 30)} blur={2.8} far={22} color="#000000" />
+      <ContactShadows position={[0, 0.035, 0]} opacity={0.58} scale={Math.max(84, cityBounds.size[0] + 34)} blur={2.8} far={24} color="#03101a" />
       {labelPositions.map((label) => (
         <Html key={label.district} position={[label.x, 0.15, label.z]} center distanceFactor={18} zIndexRange={[3, 0]} className="district-label">
           {label.district}
@@ -143,24 +142,24 @@ function CityTerrain({ bounds }: { bounds: CityBounds }) {
   const depth = Math.max(72, bounds.size[2] + 18);
   return (
     <group position={[bounds.center[0], 0, bounds.center[2]]}>
-      <mesh position={[0, -0.2, 0]} scale={[width, 0.32, depth]} receiveShadow>
+      <mesh position={[0, -0.5, 0]} scale={[width, 0.96, depth]} receiveShadow>
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="#0A100B" roughness={0.96} metalness={0.04} />
-        <Edges color="#263823" threshold={8} />
+        <meshStandardMaterial color="#1e3342" roughness={0.78} metalness={0.18} emissive="#0e2a3a" emissiveIntensity={0.1} />
+        <Edges color="#6faec7" threshold={8} />
       </mesh>
-      <mesh position={[0, -0.025, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <mesh position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[width, depth]} />
         <meshStandardMaterial
-          color="#1C2118"
-          roughness={0.94}
-          metalness={0.02}
-          emissive="#10170F"
+          color="#314b5e"
+          roughness={0.7}
+          metalness={0.12}
+          emissive="#14354a"
           emissiveIntensity={0.18}
         />
       </mesh>
-      <mesh position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 4]}>
+      <mesh position={[0, 0.035, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 4]}>
         <ringGeometry args={[Math.max(width, depth) * 0.38, Math.max(width, depth) * 0.385, 4]} />
-        <meshBasicMaterial color="#D6B35A" transparent opacity={0.18} />
+        <meshBasicMaterial color="#f0c76d" transparent opacity={0.26} />
       </mesh>
     </group>
   );
@@ -172,8 +171,8 @@ function RoadNetwork({ roads }: { roads: RoadStripData[] }) {
       {roads.map((road) => (
         <mesh key={road.id} position={road.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={road.size} />
-          <meshStandardMaterial color="#101611" roughness={0.78} metalness={0.08} emissive="#080D09" emissiveIntensity={0.16} />
-          <Edges color="#3A4638" threshold={8} />
+          <meshStandardMaterial color="#233949" roughness={0.7} metalness={0.18} emissive="#143247" emissiveIntensity={0.16} />
+          <Edges color="#78bdd7" threshold={8} />
         </mesh>
       ))}
     </>
@@ -186,8 +185,8 @@ function GreenSpaces({ parks }: { parks: ParkPatch[] }) {
       {parks.map((park) => (
         <mesh key={park.id} position={park.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={park.size} />
-          <meshStandardMaterial color={park.tone} roughness={0.98} metalness={0} emissive="#1F3A23" emissiveIntensity={0.18} />
-          <Edges color="#8ECF7C" threshold={8} />
+          <meshStandardMaterial color={park.tone} roughness={0.86} metalness={0.02} emissive="#17432f" emissiveIntensity={0.12} />
+          <Edges color="#78c99c" threshold={8} />
         </mesh>
       ))}
     </>
@@ -209,7 +208,7 @@ function Tree({ marker }: { marker: TreeMarker }) {
     <group position={marker.position} scale={marker.scale}>
       <mesh position={[0, 0.22, 0]} castShadow receiveShadow>
         <cylinderGeometry args={[0.055, 0.085, 0.44, 6]} />
-        <meshStandardMaterial color="#6D5635" roughness={0.86} metalness={0.02} />
+        <meshStandardMaterial color="#775f42" roughness={0.82} metalness={0.02} />
       </mesh>
       <mesh position={[0, 0.62, 0]} castShadow receiveShadow>
         <coneGeometry args={[0.32, 0.72, 7]} />
@@ -217,15 +216,15 @@ function Tree({ marker }: { marker: TreeMarker }) {
       </mesh>
       <mesh position={[0, 0.98, 0]} castShadow receiveShadow>
         <icosahedronGeometry args={[0.22, 0]} />
-        <meshStandardMaterial color="#B5E48C" roughness={0.88} metalness={0} emissive="#1F3A23" emissiveIntensity={0.12} />
+        <meshStandardMaterial color="#9fc978" roughness={0.88} metalness={0} emissive="#224d33" emissiveIntensity={0.16} />
       </mesh>
     </group>
   );
 }
 
 function Building({ building, selected, onSelect }: { building: CityBuilding; selected: boolean; onSelect: () => void }) {
-  const color = building.active ? building.color : "#40483f";
-  const edgeColor = selected ? "#F2C14E" : building.active ? building.glowColor : "#5D665A";
+  const color = building.active ? building.color : "#4d5a63";
+  const edgeColor = selected ? "#f0c76d" : building.active ? building.glowColor : "#5d7280";
   return (
     <group
       position={building.position}
@@ -255,17 +254,17 @@ function BuildingPlot({ building, selected }: { building: CityBuilding; selected
   const [w, h, d] = building.scale;
   const plotWidth = Math.max(1.7, w + 0.9);
   const plotDepth = Math.max(1.7, d + 0.9);
-  const edgeColor = selected ? "#F2C14E" : building.active ? building.accentColor : "#4A5548";
+  const edgeColor = selected ? "#f0c76d" : building.active ? building.accentColor : "#5d7280";
   return (
     <group position={[0, -h / 2 + 0.04, 0]}>
       <mesh scale={[plotWidth, 0.08, plotDepth]} castShadow receiveShadow>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial
-          color={building.active ? "#111A13" : "#151815"}
-          roughness={0.86}
-          metalness={0.12}
-          emissive={building.active ? "#0E160F" : "#000000"}
-          emissiveIntensity={0.2}
+          color={building.active ? "#253f52" : "#1d2c38"}
+          roughness={0.68}
+          metalness={0.2}
+          emissive={building.active ? "#123950" : "#000000"}
+          emissiveIntensity={0.18}
         />
         <Edges color={edgeColor} threshold={8} />
       </mesh>
@@ -289,15 +288,20 @@ function BuildingBody({
   selected: boolean;
 }) {
   const [w, h, d] = building.scale;
-  const opacity = building.active ? 0.94 : 0.26;
-  const emissiveIntensity = selected ? 0.55 : building.active ? 0.1 : 0;
-  const accentOpacity = building.active ? 0.82 : 0.22;
+  const opacity = building.active ? 0.92 : 0.26;
+  const emissiveIntensity = selected ? 0.46 : building.active ? 0.12 : 0;
+  const accentOpacity = building.active ? 0.9 : 0.22;
+  const signature = <BuildingSignature building={building} width={w} height={h} depth={d} selected={selected} accentOpacity={accentOpacity} />;
   const material = () => (
-    <meshStandardMaterial
+    <meshPhysicalMaterial
       color={color}
-      roughness={0.38}
-      metalness={0.22}
-      emissive={selected ? "#F2C14E" : building.glowColor}
+      roughness={0.18}
+      metalness={0.38}
+      clearcoat={0.82}
+      clearcoatRoughness={0.1}
+      ior={1.42}
+      reflectivity={0.54}
+      emissive={selected ? "#f0c76d" : building.glowColor}
       emissiveIntensity={emissiveIntensity}
       transparent
       opacity={opacity}
@@ -318,6 +322,7 @@ function BuildingBody({
           <BoxPart position={[w * 0.36, h * 0.5 + 0.34, 0]} scale={[0.12, h * 0.26, d * 0.7]} material={material()} edgeColor={building.accentColor} />
           <LightBand width={w * 1.18} depth={d * 1.16} y={h * 0.18} color={building.accentColor} opacity={accentOpacity} />
           <LightBand width={w * 1.02} depth={d * 1.06} y={h * 0.4} color={building.glowColor} opacity={accentOpacity * 0.75} />
+          {signature}
           {details}
         </>
       );
@@ -341,6 +346,7 @@ function BuildingBody({
             <octahedronGeometry args={[Math.max(w, d) * 0.28, 0]} />
             <meshBasicMaterial color={building.glowColor} transparent opacity={accentOpacity} />
           </mesh>
+          {signature}
           {details}
         </>
       );
@@ -348,12 +354,13 @@ function BuildingBody({
       return (
         <>
           <BoxPart position={[0, 0, 0]} scale={[w * 0.82, h, d]} material={material()} edgeColor={edgeColor} />
-          <BoxPart position={[w * 0.42, h * 0.05, 0]} scale={[w * 0.14, h * 0.86, d * 1.35]} material={material()} edgeColor="#A6F6FF" />
-          <BoxPart position={[-w * 0.42, h * 0.05, 0]} scale={[w * 0.14, h * 0.86, d * 1.35]} material={material()} edgeColor="#A6F6FF" />
+          <BoxPart position={[w * 0.42, h * 0.05, 0]} scale={[w * 0.14, h * 0.86, d * 1.35]} material={material()} edgeColor="#bdeeff" />
+          <BoxPart position={[-w * 0.42, h * 0.05, 0]} scale={[w * 0.14, h * 0.86, d * 1.35]} material={material()} edgeColor="#bdeeff" />
           <BoxPart position={[0, h * 0.5 + 0.2, 0]} scale={[w * 1.08, 0.16, d * 1.24]} material={material()} edgeColor={edgeColor} />
           <ScreenPanel position={[0, h * 0.06, d * 0.72]} scale={[w * 1.05, h * 0.62, 0.05]} color={building.accentColor} opacity={accentOpacity} />
           <ScreenPanel position={[0, h * 0.18, -d * 0.72]} scale={[w * 0.8, h * 0.5, 0.05]} color={building.glowColor} opacity={accentOpacity * 0.65} />
           <AntennaCluster width={w} height={h} color={building.glowColor} opacity={accentOpacity} />
+          {signature}
           {details}
         </>
       );
@@ -373,17 +380,19 @@ function BuildingBody({
           <BoxPart position={[w * 0.48, h * 0.16, 0]} scale={[0.12, h * 0.95, 0.12]} material={material()} edgeColor={building.glowColor} />
           <BoxPart position={[-w * 0.48, h * 0.02, 0]} scale={[0.12, h * 0.72, 0.12]} material={material()} edgeColor={building.glowColor} />
           <AntennaCluster width={w * 0.8} height={h * 1.1} color={building.accentColor} opacity={accentOpacity} />
+          {signature}
           {details}
         </>
       );
     case "style":
       return (
         <>
-          <BoxPart position={[0, 0, 0]} scale={[w, h, Math.max(0.16, d)]} material={material()} edgeColor="#F472B6" />
-          <BoxPart position={[0, h * 0.12, d * 0.72]} scale={[w * 0.78, h * 0.55, 0.08]} material={material()} edgeColor="#F8B4D9" />
+          <BoxPart position={[0, 0, 0]} scale={[w, h, Math.max(0.16, d)]} material={material()} edgeColor="#9bc7d9" />
+          <BoxPart position={[0, h * 0.12, d * 0.72]} scale={[w * 0.78, h * 0.55, 0.08]} material={material()} edgeColor="#d6e6ee" />
           <ScreenPanel position={[0, h * 0.12, d * 0.82]} scale={[w * 0.9, h * 0.72, 0.045]} color={building.accentColor} opacity={accentOpacity} />
           <LightBand width={w * 1.1} depth={Math.max(0.5, d * 1.4)} y={-h * 0.28} color={building.glowColor} opacity={accentOpacity * 0.7} />
           <HoloSign building={building} y={h * 0.52 + 0.2} color={building.accentColor} opacity={accentOpacity} />
+          {signature}
         </>
       );
     case "test":
@@ -401,6 +410,7 @@ function BuildingBody({
           </mesh>
           <LightBand width={w * 1.12} depth={d * 1.12} y={-h * 0.18} color={building.accentColor} opacity={accentOpacity * 0.8} />
           <HoloSign building={building} y={h * 0.56 + 0.3} color={building.glowColor} opacity={accentOpacity} />
+          {signature}
           {details}
         </>
       );
@@ -421,6 +431,7 @@ function BuildingBody({
             <meshBasicMaterial color={building.glowColor} transparent opacity={accentOpacity * 0.7} />
           </mesh>
           <DataCores width={w} height={h} depth={d} color={building.accentColor} opacity={accentOpacity} />
+          {signature}
         </>
       );
     case "service":
@@ -442,6 +453,7 @@ function BuildingBody({
           </mesh>
           <ScreenPanel position={[w * 0.58, h * 0.05, 0]} scale={[0.05, h * 0.58, d * 0.72]} color={building.glowColor} opacity={accentOpacity * 0.65} />
           <AntennaCluster width={w} height={h} color={building.glowColor} opacity={accentOpacity} />
+          {signature}
           {details}
         </>
       );
@@ -458,10 +470,186 @@ function BuildingBody({
             <meshBasicMaterial color={building.accentColor} transparent opacity={accentOpacity * 0.7} />
           </mesh>
           <AntennaCluster width={w * 0.7} height={h} color={building.glowColor} opacity={accentOpacity * 0.7} />
+          {signature}
           {details}
         </>
       );
   }
+}
+
+function BuildingSignature({
+  building,
+  width,
+  height,
+  depth,
+  selected,
+  accentOpacity
+}: {
+  building: CityBuilding;
+  width: number;
+  height: number;
+  depth: number;
+  selected: boolean;
+  accentOpacity: number;
+}) {
+  const seed = seededNumber(`${building.node.id}-skin`);
+  const lightOpacity = selected ? 0.95 : accentOpacity * (0.54 + seed * 0.22);
+  const hasBeacon = selected || height > 9 || building.node.commitCount > 35;
+
+  return (
+    <>
+      <GlassSkin width={width} height={height} depth={depth} color={building.glowColor} selected={selected} />
+      <FacadeMullions width={width} height={height} depth={depth} color={building.accentColor} opacity={lightOpacity} seed={seed} />
+      <RooftopCrown width={width} height={height} depth={depth} color={building.glowColor} accentColor={building.accentColor} selected={selected} opacity={accentOpacity} />
+      <GroundHalo width={width} height={height} depth={depth} color={building.accentColor} opacity={selected ? 0.72 : accentOpacity * 0.34} />
+      {hasBeacon ? <SkyBeacon width={width} height={height} color={building.glowColor} opacity={selected ? 0.9 : 0.52} /> : null}
+    </>
+  );
+}
+
+function GlassSkin({ width, height, depth, color, selected }: { width: number; height: number; depth: number; color: string; selected: boolean }) {
+  return (
+    <mesh scale={[width * 1.035, height * 1.01, depth * 1.035]} renderOrder={2}>
+      <boxGeometry args={[1, 1, 1]} />
+      <meshPhysicalMaterial
+        color="#d8f4ff"
+        roughness={0.05}
+        metalness={0.08}
+        clearcoat={1}
+        clearcoatRoughness={0.04}
+        ior={1.5}
+        reflectivity={0.72}
+        emissive={color}
+        emissiveIntensity={selected ? 0.12 : 0.04}
+        transparent
+        opacity={selected ? 0.2 : 0.095}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+}
+
+function FacadeMullions({
+  width,
+  height,
+  depth,
+  color,
+  opacity,
+  seed
+}: {
+  width: number;
+  height: number;
+  depth: number;
+  color: string;
+  opacity: number;
+  seed: number;
+}) {
+  const frontCount = clampInt(Math.floor(width * 1.15 + seed * 2), 2, 7);
+  const sideCount = clampInt(Math.floor(depth * 1.1 + seed * 2), 2, 6);
+  const verticals = Array.from({ length: frontCount }, (_, index) => {
+    const x = -width * 0.38 + (frontCount === 1 ? 0 : (index / (frontCount - 1)) * width * 0.76);
+    return <GlowBar key={`front-${index}`} position={[x, 0, depth * 0.526]} scale={[0.026, height * 0.82, 0.022]} color={color} opacity={opacity * 0.62} />;
+  });
+  const sideVerticals = Array.from({ length: sideCount }, (_, index) => {
+    const z = -depth * 0.36 + (sideCount === 1 ? 0 : (index / (sideCount - 1)) * depth * 0.72);
+    return <GlowBar key={`side-${index}`} position={[width * 0.526, 0, z]} scale={[0.022, height * 0.72, 0.026]} color="#bdeeff" opacity={opacity * 0.38} />;
+  });
+
+  return (
+    <>
+      {verticals}
+      {sideVerticals}
+      <GlowBar position={[0, height * 0.18, depth * 0.532]} scale={[width * 0.84, 0.035, 0.026]} color="#f8fcff" opacity={opacity * 0.24} />
+      <GlowBar position={[0, -height * 0.24, depth * 0.532]} scale={[width * 0.74, 0.03, 0.026]} color={color} opacity={opacity * 0.42} />
+    </>
+  );
+}
+
+function RooftopCrown({
+  width,
+  height,
+  depth,
+  color,
+  accentColor,
+  selected,
+  opacity
+}: {
+  width: number;
+  height: number;
+  depth: number;
+  color: string;
+  accentColor: string;
+  selected: boolean;
+  opacity: number;
+}) {
+  const radius = Math.max(width, depth);
+  return (
+    <>
+      <mesh position={[0, height / 2 + 0.045, 0]} scale={[width * 1.08, 0.08, depth * 1.08]} castShadow receiveShadow>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshPhysicalMaterial
+          color="#e6f8ff"
+          roughness={0.12}
+          metalness={0.26}
+          clearcoat={0.92}
+          emissive={color}
+          emissiveIntensity={selected ? 0.34 : 0.13}
+          transparent
+          opacity={selected ? 0.5 : 0.28}
+        />
+        <Edges color={selected ? "#fff0bd" : color} threshold={12} />
+      </mesh>
+      <mesh position={[0, height / 2 + 0.13, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 4]} renderOrder={3}>
+        <ringGeometry args={[radius * 0.42, radius * 0.49, 4]} />
+        <meshBasicMaterial color={accentColor} transparent opacity={Math.min(0.78, opacity * 0.72)} blending={AdditiveBlending} depthWrite={false} />
+      </mesh>
+    </>
+  );
+}
+
+function GroundHalo({ width, height, depth, color, opacity }: { width: number; height: number; depth: number; color: string; opacity: number }) {
+  const radius = Math.max(width, depth);
+  return (
+    <mesh position={[0, -height / 2 + 0.078, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 4]} renderOrder={1}>
+      <ringGeometry args={[radius * 0.58, radius * 0.68, 4]} />
+      <meshBasicMaterial color={color} transparent opacity={opacity} blending={AdditiveBlending} depthWrite={false} />
+    </mesh>
+  );
+}
+
+function SkyBeacon({ width, height, color, opacity }: { width: number; height: number; color: string; opacity: number }) {
+  const beaconHeight = clampNumber(height * 0.36, 1.1, 4.2);
+  return (
+    <group position={[0, height / 2 + beaconHeight / 2 + 0.2, 0]}>
+      <mesh renderOrder={3}>
+        <cylinderGeometry args={[0.018, 0.032, beaconHeight, 8]} />
+        <meshBasicMaterial color={color} transparent opacity={opacity} blending={AdditiveBlending} depthWrite={false} />
+      </mesh>
+      <mesh position={[0, beaconHeight / 2 + 0.1, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={3}>
+        <ringGeometry args={[Math.max(0.18, width * 0.16), Math.max(0.22, width * 0.2), 34]} />
+        <meshBasicMaterial color={color} transparent opacity={opacity * 0.56} blending={AdditiveBlending} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
+
+function GlowBar({
+  position,
+  scale,
+  color,
+  opacity
+}: {
+  position: [number, number, number];
+  scale: [number, number, number];
+  color: string;
+  opacity: number;
+}) {
+  return (
+    <mesh position={position} scale={scale} renderOrder={3}>
+      <boxGeometry args={[1, 1, 1]} />
+      <meshBasicMaterial color={color} transparent opacity={opacity} blending={AdditiveBlending} depthWrite={false} />
+    </mesh>
+  );
 }
 
 function BoxPart({
@@ -508,7 +696,7 @@ function ScreenPanel({
     <mesh position={position} scale={scale}>
       <boxGeometry args={[1, 1, 1]} />
       <meshBasicMaterial color={color} transparent opacity={opacity} />
-      <Edges color="#F4F0E8" threshold={10} />
+      <Edges color="#f8fcff" threshold={10} />
     </mesh>
   );
 }
@@ -669,7 +857,7 @@ function buildLandscape(
   const roads: RoadStripData[] = [];
   const parks: ParkPatch[] = [];
   const trees: TreeMarker[] = [];
-  const treeTones = ["#5FAF5E", "#76B852", "#8ECF7C", "#4F8F57"];
+  const treeTones = ["#407f5b", "#568f5b", "#6da66b", "#356f54"];
 
   pads.forEach((pad, padIndex) => {
     const [x, , z] = pad.position;
@@ -708,13 +896,13 @@ function buildLandscape(
           id: `${key}-park-a`,
           position: [x - width / 2 + parkWidth / 2 + 0.6, 0.064, z + depth / 2 - parkDepth / 2 - 0.6],
           size: [parkWidth, parkDepth],
-          tone: padIndex % 2 ? "#274A28" : "#234226"
+          tone: padIndex % 2 ? "#244c36" : "#2a5a3d"
         },
         {
           id: `${key}-park-b`,
           position: [x + width / 2 - parkWidth / 2 - 0.6, 0.064, z - depth / 2 + parkDepth / 2 + 0.6],
           size: [parkWidth * 0.82, parkDepth * 0.86],
-          tone: padIndex % 2 ? "#213B24" : "#2B512B"
+          tone: padIndex % 2 ? "#1f4432" : "#2b6140"
         }
       );
     }
@@ -774,7 +962,7 @@ function PulseRing() {
   return (
     <mesh ref={ringRef} position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <ringGeometry args={[28, 28.18, 96]} />
-      <meshBasicMaterial color="#F2C14E" transparent opacity={0.34} />
+      <meshBasicMaterial color="#d7b76f" transparent opacity={0.3} />
     </mesh>
   );
 }

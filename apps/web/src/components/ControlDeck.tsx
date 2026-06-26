@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import type { ImportRequest, LocalCandidate, RepoGraph, RepoSummary, ScanTask } from "@repocity/shared";
 import { ChevronDown, ChevronUp, Github, HardDrive, Loader2, Map, RadioTower } from "lucide-react";
+import { GlassSurface } from "./GlassSurface";
 
 interface ControlDeckProps {
   repositories: RepoSummary[];
@@ -28,6 +29,11 @@ export function ControlDeck({
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
+    const isMobile = window.matchMedia?.("(max-width: 900px)").matches;
+    if (isMobile) setIsCollapsed(true);
+  }, []);
+
+  useEffect(() => {
     if (importType === "local" && localCandidates[0]) {
       setUrlOrPath(localCandidates[0].path);
     }
@@ -48,7 +54,7 @@ export function ControlDeck({
 
   if (isCollapsed) {
     return (
-      <section className="control-deck is-collapsed" aria-label="Repository controls">
+      <GlassSurface as="section" className="control-deck is-collapsed" variant="dock" intensity="medium" radius={18} aria-label="Repository controls">
         <button
           type="button"
           className="deck-toggle"
@@ -72,12 +78,12 @@ export function ControlDeck({
           <span className={scan?.status === "failed" ? "status-dot error" : "status-dot"} />
           <span>{currentStatus}</span>
         </div>
-      </section>
+      </GlassSurface>
     );
   }
 
   return (
-    <section className="control-deck" aria-label="Repository controls">
+    <GlassSurface as="section" className="control-deck" variant="dock" intensity="medium" radius={20} aria-label="Repository controls">
       <button
         type="button"
         className="deck-toggle"
@@ -174,6 +180,6 @@ export function ControlDeck({
           ))}
         </div>
       ) : null}
-    </section>
+    </GlassSurface>
   );
 }
