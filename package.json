@@ -1,0 +1,19 @@
+{
+  "name": "repocity",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @repocity/shared build && pnpm --parallel --filter @repocity/server --filter @repocity/web dev",
+    "build": "pnpm -r build",
+    "test": "pnpm --filter @repocity/shared build && pnpm --filter @repocity/server test && pnpm --filter @repocity/web test",
+    "typecheck": "pnpm --filter @repocity/shared build && pnpm --filter @repocity/server typecheck && pnpm --filter @repocity/web typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "playwright-core": "^1.61.1",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.9"
+  },
+  "packageManager": "pnpm@10.24.0"
+}

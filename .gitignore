@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+.turbo/
+.vite/
+.env
+.env.*
+!.env.example
+.repocity/
+apps/server/.cache/
+apps/web/playwright-report/
+apps/web/test-results/
+*.tsbuildinfo
+
