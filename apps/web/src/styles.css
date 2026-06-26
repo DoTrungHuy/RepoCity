@@ -4,14 +4,15 @@
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: #050706;
   color: #f4f0e8;
-  --panel: rgba(8, 13, 10, 0.84);
-  --panel-strong: rgba(13, 19, 15, 0.96);
-  --line: rgba(190, 255, 222, 0.2);
+  --panel: rgba(8, 13, 10, 0.72);
+  --panel-strong: rgba(13, 19, 15, 0.9);
+  --line: rgba(190, 255, 222, 0.24);
   --text-muted: #aeb9a8;
   --mint: #9be7c4;
   --copper: #f2c14e;
   --sky: #63c7ff;
   --rose: #f472b6;
+  --violet: #b6a6ff;
   --danger: #fb7185;
   --terminal: #050706;
 }
@@ -56,9 +57,11 @@ select:focus-visible {
   height: 100vh;
   overflow: hidden;
   background:
-    linear-gradient(90deg, rgba(242, 193, 78, 0.11), transparent 18%, rgba(99, 199, 255, 0.08) 74%, transparent),
-    repeating-linear-gradient(0deg, rgba(155, 231, 196, 0.04) 0, rgba(155, 231, 196, 0.04) 1px, transparent 1px, transparent 42px),
-    repeating-linear-gradient(90deg, rgba(242, 193, 78, 0.035) 0, rgba(242, 193, 78, 0.035) 1px, transparent 1px, transparent 54px),
+    radial-gradient(ellipse at 18% 12%, rgba(99, 199, 255, 0.14), transparent 36%),
+    radial-gradient(ellipse at 82% 24%, rgba(242, 193, 78, 0.11), transparent 30%),
+    linear-gradient(120deg, rgba(244, 114, 182, 0.06), transparent 32%, rgba(155, 231, 196, 0.08) 76%, transparent),
+    repeating-linear-gradient(0deg, rgba(155, 231, 196, 0.035) 0, rgba(155, 231, 196, 0.035) 1px, transparent 1px, transparent 42px),
+    repeating-linear-gradient(90deg, rgba(242, 193, 78, 0.032) 0, rgba(242, 193, 78, 0.032) 1px, transparent 1px, transparent 54px),
     #050706;
 }
 
@@ -78,6 +81,189 @@ select:focus-visible {
 .scene-layer {
   position: absolute;
   inset: 0;
+  z-index: 0;
+}
+
+.glass-filter-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.liquid-atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.95;
+}
+
+.liquid-atmosphere::before {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  background:
+    conic-gradient(from 118deg at 36% 38%, transparent 0 14%, rgba(166, 246, 255, 0.28) 25%, transparent 39%, rgba(242, 193, 78, 0.2) 57%, transparent 70%, rgba(244, 114, 182, 0.18) 84%, transparent 100%),
+    linear-gradient(108deg, transparent 8%, rgba(155, 231, 196, 0.22) 24%, transparent 44%, rgba(99, 199, 255, 0.18) 67%, transparent 86%);
+  filter: url("#repocity-liquid-distortion") blur(0.4px);
+  animation: liquidSweep 24s ease-in-out infinite alternate;
+}
+
+.liquid-field,
+.glass-caustics,
+.liquid-current {
+  position: absolute;
+  inset: -12%;
+}
+
+.liquid-field {
+  background:
+    repeating-linear-gradient(118deg, transparent 0 42px, rgba(244, 240, 232, 0.08) 46px, transparent 52px),
+    linear-gradient(130deg, rgba(99, 199, 255, 0.22), transparent 28%, rgba(182, 166, 255, 0.16) 52%, transparent 74%, rgba(242, 193, 78, 0.16));
+  filter: url("#repocity-liquid-distortion") saturate(1.35);
+  opacity: 0.76;
+  transform-origin: 50% 50%;
+  animation: liquidFloat 19s ease-in-out infinite alternate;
+}
+
+.refractive-shell {
+  position: absolute;
+  pointer-events: none;
+  border: 1px solid rgba(244, 240, 232, 0.22);
+  border-radius: 24px;
+  background:
+    linear-gradient(124deg, rgba(244, 240, 232, 0.24), rgba(244, 240, 232, 0.04) 18%, transparent 44%, rgba(166, 246, 255, 0.16) 68%, rgba(242, 193, 78, 0.08)),
+    radial-gradient(ellipse at 18% 12%, rgba(166, 246, 255, 0.2), transparent 42%),
+    rgba(244, 240, 232, 0.035);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -1px 0 rgba(99, 199, 255, 0.18),
+    inset 16px 0 38px rgba(244, 240, 232, 0.06),
+    inset -18px 0 42px rgba(99, 199, 255, 0.12),
+    0 0 56px rgba(99, 199, 255, 0.16);
+  backdrop-filter: blur(12px) saturate(1.55) contrast(1.08);
+  filter: url("#repocity-liquid-distortion");
+  mix-blend-mode: screen;
+}
+
+.refractive-shell::before,
+.refractive-shell::after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border-radius: 18px;
+  pointer-events: none;
+}
+
+.refractive-shell::before {
+  border-top: 1px solid rgba(244, 240, 232, 0.58);
+  border-left: 1px solid rgba(166, 246, 255, 0.24);
+  opacity: 0.82;
+}
+
+.refractive-shell::after {
+  border-right: 1px solid rgba(244, 114, 182, 0.18);
+  border-bottom: 1px solid rgba(242, 193, 78, 0.2);
+  opacity: 0.7;
+}
+
+.refractive-shell span {
+  position: absolute;
+  display: block;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(244, 240, 232, 0.7), rgba(166, 246, 255, 0.34), transparent);
+  box-shadow: 0 0 18px rgba(166, 246, 255, 0.3);
+  opacity: 0.72;
+}
+
+.refractive-shell span:first-child {
+  top: 24%;
+  left: 9%;
+  width: 72%;
+  transform: rotate(-3deg);
+}
+
+.refractive-shell span:last-child {
+  right: 7%;
+  bottom: 19%;
+  width: 56%;
+  transform: rotate(4deg);
+}
+
+.shell-a {
+  top: 13%;
+  left: -12%;
+  width: 64vw;
+  height: 34vh;
+  transform: rotate(-7deg) translate3d(0, 0, 0);
+  animation: shellDriftA 18s ease-in-out infinite alternate;
+}
+
+.shell-b {
+  top: 34%;
+  right: -16%;
+  width: 58vw;
+  height: 44vh;
+  transform: rotate(8deg) translate3d(0, 0, 0);
+  animation: shellDriftB 22s ease-in-out infinite alternate;
+}
+
+.shell-c {
+  left: 18%;
+  bottom: -12%;
+  width: 66vw;
+  height: 27vh;
+  transform: rotate(-2deg) translate3d(0, 0, 0);
+  animation: shellDriftC 24s ease-in-out infinite alternate;
+}
+
+.liquid-current {
+  height: 36%;
+  top: 7%;
+  right: -30%;
+  left: -30%;
+  border-top: 1px solid rgba(244, 240, 232, 0.2);
+  border-bottom: 1px solid rgba(99, 199, 255, 0.16);
+  background:
+    linear-gradient(100deg, transparent 0 16%, rgba(166, 246, 255, 0.32) 32%, rgba(244, 240, 232, 0.16) 44%, transparent 60%),
+    linear-gradient(180deg, transparent, rgba(99, 199, 255, 0.14), transparent);
+  filter: blur(8px) saturate(1.5);
+  transform: rotate(-9deg) translate3d(-7%, 0, 0);
+  animation: currentDrift 17s cubic-bezier(0.37, 0, 0.2, 1) infinite alternate;
+}
+
+.current-b {
+  top: 40%;
+  height: 30%;
+  border-color: rgba(242, 193, 78, 0.16);
+  background:
+    linear-gradient(100deg, transparent 0 20%, rgba(242, 193, 78, 0.25) 38%, rgba(155, 231, 196, 0.18) 51%, transparent 68%),
+    linear-gradient(180deg, transparent, rgba(244, 114, 182, 0.12), transparent);
+  transform: rotate(7deg) translate3d(5%, 0, 0);
+  animation-duration: 22s;
+}
+
+.current-c {
+  top: 70%;
+  height: 26%;
+  border-color: rgba(155, 231, 196, 0.14);
+  background:
+    linear-gradient(100deg, transparent 0 18%, rgba(244, 240, 232, 0.18) 30%, rgba(99, 199, 255, 0.2) 48%, transparent 66%),
+    linear-gradient(180deg, transparent, rgba(155, 231, 196, 0.13), transparent);
+  transform: rotate(-4deg) translate3d(-4%, 0, 0);
+  animation-duration: 28s;
+}
+
+.glass-caustics {
+  background:
+    repeating-linear-gradient(94deg, transparent 0 18px, rgba(166, 246, 255, 0.09) 20px, transparent 24px),
+    repeating-linear-gradient(142deg, transparent 0 28px, rgba(242, 193, 78, 0.08) 30px, transparent 34px);
+  opacity: 0.58;
+  mask-image: linear-gradient(180deg, transparent 0, #000 20%, #000 86%, transparent 100%);
+  animation: causticShift 13s linear infinite;
 }
 
 .loading-stage {
@@ -99,12 +285,52 @@ select:focus-visible {
   position: absolute;
   z-index: 10;
   border: 1px solid var(--line);
-  background: var(--panel);
+  background:
+    linear-gradient(135deg, rgba(244, 240, 232, 0.1), transparent 24%),
+    radial-gradient(ellipse at 18% 0, rgba(166, 246, 255, 0.18), transparent 42%),
+    radial-gradient(ellipse at 92% 28%, rgba(242, 193, 78, 0.12), transparent 34%),
+    var(--panel);
   box-shadow:
     0 24px 70px rgba(0, 0, 0, 0.38),
-    inset 0 1px 0 rgba(244, 240, 232, 0.08),
-    0 0 0 1px rgba(99, 199, 255, 0.04);
-  backdrop-filter: blur(18px);
+    inset 0 1px 0 rgba(244, 240, 232, 0.18),
+    inset 0 -1px 0 rgba(99, 199, 255, 0.09),
+    0 0 0 1px rgba(99, 199, 255, 0.07),
+    0 0 36px rgba(99, 199, 255, 0.08);
+  backdrop-filter: blur(24px) saturate(1.35) contrast(1.04);
+}
+
+.control-deck,
+.timeline-bar,
+.toast {
+  overflow: hidden;
+}
+
+.control-deck::before,
+.inspector::before,
+.timeline-bar::before,
+.toast::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(112deg, transparent 0 22%, rgba(244, 240, 232, 0.18) 32%, rgba(166, 246, 255, 0.08) 42%, transparent 58%),
+    linear-gradient(180deg, rgba(244, 240, 232, 0.14), transparent 10%, transparent 82%, rgba(99, 199, 255, 0.12)),
+    repeating-linear-gradient(102deg, transparent 0 18px, rgba(244, 240, 232, 0.035) 20px, transparent 24px);
+  filter: url("#repocity-liquid-distortion");
+  opacity: 0.34;
+  transform: translate3d(-8%, 0, 0);
+  animation: glassSheen 16s ease-in-out infinite alternate;
+}
+
+.control-deck > *,
+.inspector > *,
+.timeline-bar > *,
+.toast > * {
+  position: relative;
+  z-index: 1;
 }
 
 .control-deck {
@@ -122,8 +348,10 @@ select:focus-visible {
   border-radius: 8px;
   transform: translateX(-50%);
   background:
-    linear-gradient(90deg, rgba(155, 231, 196, 0.13), transparent 38%, rgba(99, 199, 255, 0.1)),
-    linear-gradient(180deg, rgba(8, 13, 10, 0.94), rgba(8, 13, 10, 0.78));
+    linear-gradient(118deg, rgba(244, 240, 232, 0.13), transparent 18%, rgba(155, 231, 196, 0.1) 55%, transparent 78%),
+    radial-gradient(ellipse at 18% 0, rgba(166, 246, 255, 0.23), transparent 44%),
+    radial-gradient(ellipse at 92% 22%, rgba(244, 114, 182, 0.12), transparent 36%),
+    linear-gradient(180deg, rgba(8, 13, 10, 0.84), rgba(8, 13, 10, 0.58));
 }
 
 .control-deck.is-collapsed {
@@ -132,8 +360,9 @@ select:focus-visible {
   width: min(640px, calc(100vw - 32px));
   padding: 10px 12px;
   background:
-    linear-gradient(90deg, rgba(155, 231, 196, 0.16), transparent 48%, rgba(242, 193, 78, 0.1)),
-    rgba(8, 13, 10, 0.86);
+    linear-gradient(104deg, rgba(244, 240, 232, 0.14), transparent 24%, rgba(155, 231, 196, 0.12) 68%, transparent),
+    radial-gradient(ellipse at 12% 0, rgba(166, 246, 255, 0.22), transparent 45%),
+    rgba(8, 13, 10, 0.72);
 }
 
 .deck-toggle {
@@ -652,6 +881,75 @@ dd {
   }
 }
 
+@keyframes liquidSweep {
+  0% {
+    transform: translate3d(-2%, -1%, 0) rotate(-3deg) scale(1.03);
+  }
+  100% {
+    transform: translate3d(3%, 2%, 0) rotate(4deg) scale(1.08);
+  }
+}
+
+@keyframes liquidFloat {
+  0% {
+    transform: translate3d(-1%, 0, 0) rotate(-2deg) scale(1.02);
+  }
+  100% {
+    transform: translate3d(2%, -1%, 0) rotate(2deg) scale(1.06);
+  }
+}
+
+@keyframes currentDrift {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 18vw 0;
+  }
+}
+
+@keyframes causticShift {
+  to {
+    transform: translate3d(42px, -26px, 0);
+  }
+}
+
+@keyframes glassSheen {
+  0% {
+    transform: translate3d(-12%, -3%, 0) skewX(-10deg);
+  }
+  100% {
+    transform: translate3d(14%, 4%, 0) skewX(8deg);
+  }
+}
+
+@keyframes shellDriftA {
+  0% {
+    transform: rotate(-7deg) translate3d(-3%, -2%, 0);
+  }
+  100% {
+    transform: rotate(-4deg) translate3d(4%, 3%, 0);
+  }
+}
+
+@keyframes shellDriftB {
+  0% {
+    transform: rotate(8deg) translate3d(4%, -1%, 0);
+  }
+  100% {
+    transform: rotate(5deg) translate3d(-3%, 4%, 0);
+  }
+}
+
+@keyframes shellDriftC {
+  0% {
+    transform: rotate(-2deg) translate3d(-2%, 3%, 0);
+  }
+  100% {
+    transform: rotate(1deg) translate3d(3%, -2%, 0);
+  }
+}
+
 @media (max-width: 900px) {
   body {
     overflow: auto;
@@ -719,10 +1017,44 @@ dd {
     gap: 8px;
     width: calc(100vw - 24px);
   }
+
+  .refractive-shell {
+    border-radius: 18px;
+  }
+
+  .shell-a {
+    top: 24%;
+    left: -34%;
+    width: 96vw;
+    height: 30vh;
+  }
+
+  .shell-b {
+    top: 52%;
+    right: -42%;
+    width: 104vw;
+    height: 34vh;
+  }
+
+  .shell-c {
+    left: -10%;
+    bottom: -8%;
+    width: 112vw;
+    height: 21vh;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .spin {
+  .spin,
+  .liquid-atmosphere::before,
+  .liquid-field,
+  .liquid-current,
+  .refractive-shell,
+  .glass-caustics,
+  .control-deck::before,
+  .inspector::before,
+  .timeline-bar::before,
+  .toast::before {
     animation: none;
   }
 }

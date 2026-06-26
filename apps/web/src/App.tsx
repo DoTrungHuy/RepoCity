@@ -86,6 +86,7 @@ export function App() {
 
   return (
     <main className="app-shell">
+      <LiquidBackdrop />
       <div className="scene-layer">
         {graph ? (
           <CityScene graph={graph} selectedNodeId={selectedNodeId} timelineIndex={timelineIndex} onSelectNode={setSelectedNodeId} />
@@ -128,3 +129,36 @@ export function App() {
   );
 }
 
+function LiquidBackdrop() {
+  return (
+    <>
+      <svg className="glass-filter-defs" aria-hidden="true" focusable="false">
+        <filter id="repocity-liquid-distortion">
+          <feTurbulence type="fractalNoise" baseFrequency="0.008 0.018" numOctaves="2" seed="7" result="noise">
+            <animate attributeName="baseFrequency" values="0.006 0.014; 0.012 0.022; 0.007 0.017" dur="18s" repeatCount="indefinite" />
+          </feTurbulence>
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="28" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </svg>
+      <div className="liquid-atmosphere" aria-hidden="true">
+        <div className="liquid-field" />
+        <div className="refractive-shell shell-a">
+          <span />
+          <span />
+        </div>
+        <div className="refractive-shell shell-b">
+          <span />
+          <span />
+        </div>
+        <div className="refractive-shell shell-c">
+          <span />
+          <span />
+        </div>
+        <div className="liquid-current current-a" />
+        <div className="liquid-current current-b" />
+        <div className="liquid-current current-c" />
+        <div className="glass-caustics" />
+      </div>
+    </>
+  );
+}
