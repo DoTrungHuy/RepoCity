@@ -1848,7 +1848,7 @@ body {
 .meteor {
   height: 2px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(190, 232, 255, 0.95), rgba(255, 241, 194, 0.78), rgba(122, 214, 255, 0.18));
+  background: linear-gradient(90deg, rgba(255, 248, 218, 0.98), rgba(190, 232, 255, 0.86), rgba(122, 214, 255, 0.28), rgba(255, 255, 255, 0));
   box-shadow:
     0 0 10px rgba(125, 213, 255, 0.78),
     0 0 28px rgba(125, 213, 255, 0.38);
@@ -1857,7 +1857,7 @@ body {
 .meteor::after {
   content: "";
   position: absolute;
-  right: 0;
+  left: 0;
   top: 50%;
   width: 5px;
   height: 5px;

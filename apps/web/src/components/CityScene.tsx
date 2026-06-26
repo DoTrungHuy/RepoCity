@@ -1,8 +1,8 @@
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { ContactShadows, Edges, Grid, Html, Line, OrbitControls } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { AdditiveBlending, type Mesh } from "three";
+import { AdditiveBlending, CanvasTexture, Color, NearestFilter, RepeatWrapping, SRGBColorSpace, type Mesh } from "three";
 import type { RepoGraph } from "@repocity/shared";
 import { buildCityLayout, type CityBuilding } from "../lib/layout";
 
@@ -33,6 +33,7 @@ type ParkPatch = {
   position: [number, number, number];
   size: [number, number];
   tone: string;
+  rotation: number;
 };
 
 type TreeMarker = {
@@ -40,6 +41,7 @@ type TreeMarker = {
   position: [number, number, number];
   scale: number;
   tone: string;
+  shape: "grove" | "median";
 };
 
 type RoadStripData = {
@@ -183,11 +185,17 @@ function GreenSpaces({ parks }: { parks: ParkPatch[] }) {
   return (
     <>
       {parks.map((park) => (
-        <mesh key={park.id} position={park.position} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={park.size} />
-          <meshStandardMaterial color={park.tone} roughness={0.86} metalness={0.02} emissive="#17432f" emissiveIntensity={0.12} />
-          <Edges color="#78c99c" threshold={8} />
-        </mesh>
+        <group key={park.id} position={park.position} rotation={[0, park.rotation, 0]}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <planeGeometry args={park.size} />
+            <meshStandardMaterial color={park.tone} roughness={0.9} metalness={0.1} emissive="#071a22" emissiveIntensity={0.04} />
+            <Edges color="#345d66" threshold={8} />
+          </mesh>
+          <mesh position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={2}>
+            <ringGeometry args={[Math.min(park.size[0], park.size[1]) * 0.24, Math.min(park.size[0], park.size[1]) * 0.3, 28]} />
+            <meshBasicMaterial color="#4f8790" transparent opacity={0.08} blending={AdditiveBlending} depthWrite={false} />
+          </mesh>
+        </group>
       ))}
     </>
   );
@@ -197,26 +205,32 @@ function StreetTrees({ trees }: { trees: TreeMarker[] }) {
   return (
     <>
       {trees.map((tree) => (
-        <Tree key={tree.id} marker={tree} />
+        <CanopyCluster key={tree.id} marker={tree} />
       ))}
     </>
   );
 }
 
-function Tree({ marker }: { marker: TreeMarker }) {
+function CanopyCluster({ marker }: { marker: TreeMarker }) {
+  const isMedian = marker.shape === "median";
   return (
     <group position={marker.position} scale={marker.scale}>
-      <mesh position={[0, 0.22, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.055, 0.085, 0.44, 6]} />
-        <meshStandardMaterial color="#775f42" roughness={0.82} metalness={0.02} />
+      <mesh position={[0, 0.065, 0]} scale={isMedian ? [0.86, 0.1, 0.34] : [0.64, 0.1, 0.52]} castShadow receiveShadow>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#233743" roughness={0.62} metalness={0.22} emissive="#0a1d27" emissiveIntensity={0.12} />
+        <Edges color="#547f88" threshold={10} />
       </mesh>
-      <mesh position={[0, 0.62, 0]} castShadow receiveShadow>
-        <coneGeometry args={[0.32, 0.72, 7]} />
-        <meshStandardMaterial color={marker.tone} roughness={0.9} metalness={0.02} />
+      <mesh position={isMedian ? [-0.18, 0.22, 0] : [-0.14, 0.24, -0.08]} scale={isMedian ? [0.32, 0.2, 0.22] : [0.34, 0.24, 0.3]} castShadow receiveShadow>
+        <icosahedronGeometry args={[1, 1]} />
+        <meshStandardMaterial color={marker.tone} roughness={0.94} metalness={0.04} emissive="#092429" emissiveIntensity={0.07} />
       </mesh>
-      <mesh position={[0, 0.98, 0]} castShadow receiveShadow>
-        <icosahedronGeometry args={[0.22, 0]} />
-        <meshStandardMaterial color="#9fc978" roughness={0.88} metalness={0} emissive="#224d33" emissiveIntensity={0.16} />
+      <mesh position={isMedian ? [0.18, 0.2, 0.02] : [0.16, 0.2, 0.1]} scale={isMedian ? [0.24, 0.16, 0.2] : [0.24, 0.18, 0.24]} castShadow receiveShadow>
+        <icosahedronGeometry args={[1, 0]} />
+        <meshStandardMaterial color="#2a484a" roughness={0.94} metalness={0.02} emissive="#071f25" emissiveIntensity={0.06} />
+      </mesh>
+      <mesh position={[0, 0.071, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={2}>
+        <ringGeometry args={[isMedian ? 0.32 : 0.28, isMedian ? 0.38 : 0.34, 20]} />
+        <meshBasicMaterial color="#4f8790" transparent opacity={0.05} blending={AdditiveBlending} depthWrite={false} />
       </mesh>
     </group>
   );
@@ -291,18 +305,22 @@ function BuildingBody({
   const opacity = building.active ? 0.92 : 0.26;
   const emissiveIntensity = selected ? 0.46 : building.active ? 0.12 : 0;
   const accentOpacity = building.active ? 0.9 : 0.22;
+  const facadeTexture = useMemo(() => createFacadeTexture(building, w, h, d), [building, w, h, d]);
+  useEffect(() => () => facadeTexture.dispose(), [facadeTexture]);
   const signature = <BuildingSignature building={building} width={w} height={h} depth={d} selected={selected} accentOpacity={accentOpacity} />;
   const material = () => (
     <meshPhysicalMaterial
+      map={facadeTexture}
+      emissiveMap={facadeTexture}
       color={color}
-      roughness={0.18}
-      metalness={0.38}
-      clearcoat={0.82}
-      clearcoatRoughness={0.1}
+      roughness={0.22}
+      metalness={0.42}
+      clearcoat={0.9}
+      clearcoatRoughness={0.08}
       ior={1.42}
-      reflectivity={0.54}
+      reflectivity={0.62}
       emissive={selected ? "#f0c76d" : building.glowColor}
-      emissiveIntensity={emissiveIntensity}
+      emissiveIntensity={emissiveIntensity + 0.08}
       transparent
       opacity={opacity}
     />
@@ -499,12 +517,89 @@ function BuildingSignature({
   return (
     <>
       <GlassSkin width={width} height={height} depth={depth} color={building.glowColor} selected={selected} />
+      <SetbackTerraces width={width} height={height} depth={depth} color={building.glowColor} accentColor={building.accentColor} seed={seed} opacity={accentOpacity} />
+      <FloorPlateStack width={width} height={height} depth={depth} color="#d9f6ff" opacity={selected ? 0.62 : accentOpacity * 0.28} seed={seed} />
       <FacadeMullions width={width} height={height} depth={depth} color={building.accentColor} opacity={lightOpacity} seed={seed} />
       <RooftopCrown width={width} height={height} depth={depth} color={building.glowColor} accentColor={building.accentColor} selected={selected} opacity={accentOpacity} />
+      <RoofMachinery building={building} width={width} height={height} depth={depth} seed={seed} />
       <GroundHalo width={width} height={height} depth={depth} color={building.accentColor} opacity={selected ? 0.72 : accentOpacity * 0.34} />
       {hasBeacon ? <SkyBeacon width={width} height={height} color={building.glowColor} opacity={selected ? 0.9 : 0.52} /> : null}
     </>
   );
+}
+
+function SetbackTerraces({
+  width,
+  height,
+  depth,
+  color,
+  accentColor,
+  seed,
+  opacity
+}: {
+  width: number;
+  height: number;
+  depth: number;
+  color: string;
+  accentColor: string;
+  seed: number;
+  opacity: number;
+}) {
+  if (height < 3.4) return null;
+  const count = clampInt(Math.floor(height / 4.8), 1, 4);
+  const terraces = Array.from({ length: count }, (_, index) => {
+    const ratio = (index + 1) / (count + 1);
+    const y = -height / 2 + ratio * height;
+    const shrink = 1 - ratio * (0.16 + seed * 0.12);
+    const slabHeight = 0.055 + seed * 0.025;
+    return (
+      <mesh key={index} position={[0, y, 0]} scale={[width * (shrink + 0.12), slabHeight, depth * (shrink + 0.12)]} renderOrder={3}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshPhysicalMaterial
+          color="#d7f4ff"
+          roughness={0.1}
+          metalness={0.34}
+          clearcoat={0.95}
+          emissive={index % 2 ? color : accentColor}
+          emissiveIntensity={0.22}
+          transparent
+          opacity={Math.min(0.42, opacity * 0.34)}
+          depthWrite={false}
+        />
+        <Edges color={index % 2 ? color : accentColor} threshold={12} />
+      </mesh>
+    );
+  });
+  return <>{terraces}</>;
+}
+
+function FloorPlateStack({
+  width,
+  height,
+  depth,
+  color,
+  opacity,
+  seed
+}: {
+  width: number;
+  height: number;
+  depth: number;
+  color: string;
+  opacity: number;
+  seed: number;
+}) {
+  const floors = clampInt(Math.floor(height / (0.95 + seed * 0.55)), 3, 16);
+  const plates = Array.from({ length: floors }, (_, index) => {
+    const y = -height / 2 + ((index + 1) / (floors + 1)) * height;
+    const pulse = index % 3 === 0 ? 1 : 0.74;
+    return (
+      <group key={index}>
+        <GlowBar position={[0, y, depth * 0.538]} scale={[width * 0.88, 0.018, 0.018]} color={color} opacity={opacity * pulse} />
+        <GlowBar position={[width * 0.538, y, 0]} scale={[0.018, 0.018, depth * 0.76]} color="#8ad8f6" opacity={opacity * 0.62 * pulse} />
+      </group>
+    );
+  });
+  return <>{plates}</>;
 }
 
 function GlassSkin({ width, height, depth, color, selected }: { width: number; height: number; depth: number; color: string; selected: boolean }) {
@@ -605,6 +700,47 @@ function RooftopCrown({
       </mesh>
     </>
   );
+}
+
+function RoofMachinery({
+  building,
+  width,
+  height,
+  depth,
+  seed
+}: {
+  building: CityBuilding;
+  width: number;
+  height: number;
+  depth: number;
+  seed: number;
+}) {
+  const equipmentCount = clampInt(Math.floor((building.node.imports.length + building.node.commitCount / 22 + seed * 2) % 5) + 1, 1, 5);
+  const items = Array.from({ length: equipmentCount }, (_, index) => {
+    const rng = makeRng(`${building.node.id}-roof-${index}`);
+    const x = (rng() - 0.5) * width * 0.48;
+    const z = (rng() - 0.5) * depth * 0.48;
+    const itemWidth = clampNumber(width * (0.12 + rng() * 0.12), 0.12, 0.56);
+    const itemDepth = clampNumber(depth * (0.12 + rng() * 0.12), 0.12, 0.56);
+    const itemHeight = clampNumber(height * (0.035 + rng() * 0.035), 0.08, 0.46);
+    const color = index % 2 ? building.glowColor : building.accentColor;
+    return (
+      <group key={index} position={[x, height / 2 + 0.15 + itemHeight / 2, z]}>
+        <mesh scale={[itemWidth, itemHeight, itemDepth]} castShadow receiveShadow>
+          <boxGeometry args={[1, 1, 1]} />
+          <meshPhysicalMaterial color="#bfd4dd" roughness={0.2} metalness={0.48} clearcoat={0.7} emissive={color} emissiveIntensity={0.14} />
+          <Edges color={color} threshold={12} />
+        </mesh>
+        {index % 2 === 0 ? (
+          <mesh position={[0, itemHeight / 2 + 0.08, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[Math.max(itemWidth, itemDepth) * 0.32, Math.max(itemWidth, itemDepth) * 0.42, 20]} />
+            <meshBasicMaterial color={color} transparent opacity={0.58} blending={AdditiveBlending} depthWrite={false} />
+          </mesh>
+        ) : null}
+      </group>
+    );
+  });
+  return <>{items}</>;
 }
 
 function GroundHalo({ width, height, depth, color, opacity }: { width: number; height: number; depth: number; color: string; opacity: number }) {
@@ -857,7 +993,8 @@ function buildLandscape(
   const roads: RoadStripData[] = [];
   const parks: ParkPatch[] = [];
   const trees: TreeMarker[] = [];
-  const treeTones = ["#407f5b", "#568f5b", "#6da66b", "#356f54"];
+  const treeTones = ["#1b3b40", "#203f45", "#263f42", "#1a3438"];
+  const maxCanopies = clampInt(Math.ceil(pads.length * 0.85), 2, 8);
 
   pads.forEach((pad, padIndex) => {
     const [x, , z] = pad.position;
@@ -888,49 +1025,149 @@ function buildLandscape(
       }
     );
 
-    if (width > 6.5 && depth > 6.5) {
-      const parkWidth = clampNumber(width * 0.24, 2.2, 5.8);
-      const parkDepth = clampNumber(depth * 0.2, 1.8, 4.6);
-      parks.push(
-        {
-          id: `${key}-park-a`,
-          position: [x - width / 2 + parkWidth / 2 + 0.6, 0.064, z + depth / 2 - parkDepth / 2 - 0.6],
-          size: [parkWidth, parkDepth],
-          tone: padIndex % 2 ? "#244c36" : "#2a5a3d"
-        },
-        {
-          id: `${key}-park-b`,
-          position: [x + width / 2 - parkWidth / 2 - 0.6, 0.064, z - depth / 2 + parkDepth / 2 + 0.6],
-          size: [parkWidth * 0.82, parkDepth * 0.86],
-          tone: padIndex % 2 ? "#1f4432" : "#2b6140"
-        }
-      );
+    if (width > 9.5 && depth > 9.5 && padIndex % 4 === 0) {
+      const parkWidth = clampNumber(width * 0.12, 1.6, 2.9);
+      const parkDepth = clampNumber(depth * 0.1, 1, 2.1);
+      const cornerX = padIndex % 4 === 0 ? -1 : 1;
+      const cornerZ = padIndex % 3 === 0 ? 1 : -1;
+      parks.push({
+        id: `${key}-rain-garden`,
+        position: [
+          x + cornerX * (width / 2 - parkWidth / 2 - 0.72),
+          0.066,
+          z + cornerZ * (depth / 2 - parkDepth / 2 - 0.72)
+        ],
+        size: [parkWidth, parkDepth],
+        tone: padIndex % 4 === 0 ? "#17343a" : "#1b3a3c",
+        rotation: seededNumber(`${pad.district}-garden`) * 0.32 - 0.16
+      });
     }
 
-    const treePoints: [number, number][] = [
-      [x - width / 2 + 0.8, z - depth / 2 + 0.8],
-      [x + width / 2 - 0.8, z - depth / 2 + 0.8],
-      [x - width / 2 + 0.8, z + depth / 2 - 0.8],
-      [x + width / 2 - 0.8, z + depth / 2 - 0.8],
-      [x - width * 0.24, z - depth / 2 + 0.82],
-      [x + width * 0.24, z + depth / 2 - 0.82],
-      [x - width / 2 + 0.82, z + depth * 0.22],
-      [x + width / 2 - 0.82, z - depth * 0.22]
+    const canopyCandidates: Array<{ point: [number, number]; shape: TreeMarker["shape"] }> = [
+      { point: [x - width / 2 - roadWidth * 0.62, z - depth * 0.26], shape: "median" },
+      { point: [x + width / 2 + roadWidth * 0.62, z + depth * 0.24], shape: "median" },
+      { point: [x - width * 0.32, z + depth / 2 + roadWidth * 0.62], shape: "grove" },
+      { point: [x + width * 0.3, z - depth / 2 - roadWidth * 0.62], shape: "grove" }
     ];
 
-    treePoints.forEach(([treeX, treeZ], treeIndex) => {
+    const startIndex = padIndex % canopyCandidates.length;
+    const arrangedCanopies = [...canopyCandidates.slice(startIndex), ...canopyCandidates.slice(0, startIndex)];
+    const chosenCount = padIndex % 3 === 0 ? 1 : 0;
+    arrangedCanopies.slice(0, chosenCount).forEach(({ point, shape }, treeIndex) => {
+      if (trees.length >= maxCanopies) return;
+      const [treeX, treeZ] = point;
       if (treeX < bounds.minX || treeX > bounds.maxX || treeZ < bounds.minZ || treeZ > bounds.maxZ) return;
       const seed = seededNumber(`${pad.district}-${treeIndex}`);
       trees.push({
-        id: `${key}-tree-${treeIndex}`,
+        id: `${key}-canopy-${treeIndex}`,
         position: [treeX, 0.055, treeZ],
-        scale: clampNumber(0.78 + seed * 0.46, 0.72, 1.18),
-        tone: treeTones[(padIndex + treeIndex) % treeTones.length]
+        scale: clampNumber(0.42 + seed * 0.18, 0.4, 0.6),
+        tone: treeTones[(padIndex + treeIndex) % treeTones.length],
+        shape
       });
     });
   });
 
   return { roads, parks, trees };
+}
+
+function createFacadeTexture(building: CityBuilding, width: number, height: number, depth: number): CanvasTexture {
+  const rng = makeRng(`${building.node.id}-facade`);
+  const canvas = document.createElement("canvas");
+  canvas.width = 64;
+  canvas.height = 128;
+  const context = canvas.getContext("2d");
+  if (!context) return new CanvasTexture(canvas);
+
+  const accent = new Color(building.accentColor);
+  const glow = new Color(building.glowColor);
+  const floors = clampInt(Math.floor(height * 1.22), 5, 22);
+  const columns = clampInt(Math.floor(Math.max(width, depth) * 2.25), 4, 14);
+  const litChance = clampNumber(0.22 + building.node.commitCount / 110 + building.node.imports.length / 18, 0.24, 0.82);
+  const cellWidth = canvas.width / columns;
+  const cellHeight = canvas.height / floors;
+
+  const bg = context.createLinearGradient(0, 0, 0, canvas.height);
+  bg.addColorStop(0, "#294b5f");
+  bg.addColorStop(0.5, "#102a3b");
+  bg.addColorStop(1, "#06131f");
+  context.fillStyle = bg;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (let y = 0; y < floors; y += 1) {
+    for (let x = 0; x < columns; x += 1) {
+      const lit = rng() < litChance * (0.72 + ((x + y) % 3) * 0.09);
+      const color = rng() > 0.62 ? glow : accent;
+      const alpha = lit ? 0.46 + rng() * 0.44 : 0.08 + rng() * 0.08;
+      const insetX = 1 + rng() * 1.2;
+      const insetY = 1 + rng() * 1.2;
+      context.fillStyle = lit ? colorCss(color, alpha, 1.08 + rng() * 0.36) : `rgba(12, 34, 49, ${alpha})`;
+      context.fillRect(x * cellWidth + insetX, y * cellHeight + insetY, Math.max(1, cellWidth - insetX * 2), Math.max(1, cellHeight * 0.46));
+    }
+  }
+
+  context.strokeStyle = "rgba(210, 244, 255, 0.16)";
+  context.lineWidth = 1;
+  for (let x = 0; x <= columns; x += 1) {
+    const px = Math.round(x * cellWidth) + 0.5;
+    context.beginPath();
+    context.moveTo(px, 0);
+    context.lineTo(px, canvas.height);
+    context.stroke();
+  }
+  context.strokeStyle = "rgba(255, 241, 194, 0.12)";
+  for (let y = 0; y <= floors; y += 2) {
+    const py = Math.round(y * cellHeight) + 0.5;
+    context.beginPath();
+    context.moveTo(0, py);
+    context.lineTo(canvas.width, py);
+    context.stroke();
+  }
+
+  const bigCanvas = document.createElement("canvas");
+  bigCanvas.width = 512;
+  bigCanvas.height = 1024;
+  const bigContext = bigCanvas.getContext("2d");
+  if (!bigContext) return new CanvasTexture(canvas);
+  bigContext.imageSmoothingEnabled = false;
+  bigContext.drawImage(canvas, 0, 0, bigCanvas.width, bigCanvas.height);
+
+  const texture = new CanvasTexture(bigCanvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.wrapS = RepeatWrapping;
+  texture.wrapT = RepeatWrapping;
+  texture.repeat.set(clampNumber(Math.max(width, depth) / 2.4, 1, 3.2), clampNumber(height / 6, 1, 4.8));
+  texture.magFilter = NearestFilter;
+  texture.minFilter = NearestFilter;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function colorCss(color: Color, alpha: number, intensity = 1): string {
+  const r = Math.min(255, Math.round(color.r * 255 * intensity));
+  const g = Math.min(255, Math.round(color.g * 255 * intensity));
+  const b = Math.min(255, Math.round(color.b * 255 * intensity));
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function makeRng(value: string): () => number {
+  let seed = hashString(value);
+  return () => {
+    seed += 0x6d2b79f5;
+    let next = seed;
+    next = Math.imul(next ^ (next >>> 15), next | 1);
+    next ^= next + Math.imul(next ^ (next >>> 7), next | 61);
+    return ((next ^ (next >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function hashString(value: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
 }
 
 function seededNumber(value: string): number {
