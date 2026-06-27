@@ -2070,3 +2070,178 @@ dt,
     transform: rotate(-28deg) translate3d(-86vw, 72vh, 0);
   }
 }
+
+/* Split command layer: separate the controls so the city remains the main canvas. */
+.control-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+}
+
+.control-layer > .glass-surface {
+  position: absolute;
+  max-width: 100%;
+  pointer-events: auto;
+}
+
+.control-layer .brand-row,
+.control-layer .repository-picker,
+.control-layer .telemetry-grid,
+.control-layer .import-form,
+.control-layer .status-line,
+.control-layer .language-rail {
+  grid-area: auto;
+  margin: 0;
+}
+
+.brand-pod {
+  top: 18px;
+  left: 20px;
+  width: min(292px, calc(100vw - 40px));
+}
+
+.brand-pod > .glass-surface__content {
+  display: grid;
+  gap: 10px;
+  padding: 14px 52px 14px 14px;
+}
+
+.brand-pod .deck-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  grid-area: auto;
+}
+
+.brand-pod .status-line {
+  min-width: 0;
+  padding-left: 2px;
+}
+
+.source-console {
+  top: 18px;
+  left: 50%;
+  width: min(610px, calc(100vw - 690px));
+  min-width: 500px;
+  transform: translateX(-50%);
+}
+
+.source-console > .glass-surface__content {
+  display: grid;
+  grid-template-columns: minmax(150px, 184px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: end;
+  padding: 12px;
+}
+
+.source-console .import-form {
+  grid-template-columns: 142px minmax(0, 1fr) 88px;
+  gap: 8px;
+}
+
+.telemetry-pod {
+  top: 18px;
+  right: 20px;
+  width: 258px;
+}
+
+.telemetry-pod > .glass-surface__content {
+  padding: 12px;
+}
+
+.telemetry-pod .telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.language-dock {
+  top: 136px;
+  left: 20px;
+  width: 254px;
+}
+
+.language-dock > .glass-surface__content {
+  padding: 10px;
+}
+
+.language-dock .language-rail {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+}
+
+.language-dock .language-row {
+  max-width: none;
+}
+
+.language-dock .language-row meter {
+  display: block;
+}
+
+@media (max-width: 1180px) and (min-width: 901px) {
+  .source-console {
+    left: auto;
+    right: 20px;
+    width: calc(100vw - 352px);
+    min-width: 0;
+    transform: none;
+  }
+
+  .telemetry-pod {
+    top: 118px;
+  }
+
+  .language-dock {
+    top: 130px;
+  }
+}
+
+@media (max-width: 900px) {
+  .control-layer {
+    inset: 10px 10px auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    max-height: 44dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    pointer-events: auto;
+  }
+
+  .control-layer > .glass-surface {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    width: 100%;
+    min-width: 0;
+    transform: none;
+  }
+
+  .brand-pod > .glass-surface__content {
+    padding: 11px 48px 11px 12px;
+  }
+
+  .source-console > .glass-surface__content {
+    grid-template-columns: 1fr;
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .source-console .import-form {
+    grid-template-columns: 1fr;
+  }
+
+  .control-layer input,
+  .control-layer select,
+  .control-layer .segmented,
+  .control-layer .import-form {
+    min-width: 0;
+  }
+
+  .telemetry-pod > .glass-surface__content,
+  .language-dock > .glass-surface__content {
+    padding: 10px;
+  }
+}

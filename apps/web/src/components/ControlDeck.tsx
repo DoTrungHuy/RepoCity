@@ -86,103 +86,110 @@ export function ControlDeck({
   }
 
   return (
-    <GlassSurface as="section" className="control-deck" variant="dock" intensity="medium" radius={20} aria-label="Repository controls">
-      <button
-        type="button"
-        className="deck-toggle"
-        aria-label="Collapse repository controls"
-        aria-expanded="true"
-        title="Collapse controls"
-        onClick={() => setIsCollapsed(true)}
-      >
-        <ChevronUp size={18} />
-      </button>
-      <div className="brand-row">
-        <div className="brand-mark">
-          <Map size={22} />
+    <div className="control-layer" aria-label="Repository controls">
+      <GlassSurface as="section" className="brand-pod" variant="dock" intensity="medium" radius={22} aria-label="RepoCity status">
+        <div className="brand-row">
+          <div className="brand-mark">
+            <Map size={22} />
+          </div>
+          <div>
+            <h1>RepoCity</h1>
+            <p>{graph?.name ?? "Repository to 3D code city"}</p>
+          </div>
         </div>
-        <div>
-          <h1>RepoCity</h1>
-          <p>Repository to 3D code city</p>
+        <div className="status-line">
+          <span className={scan?.status === "failed" ? "status-dot error" : "status-dot"} />
+          <span>{currentStatus}</span>
         </div>
-      </div>
+        <button
+          type="button"
+          className="deck-toggle"
+          aria-label="Collapse repository controls"
+          aria-expanded="true"
+          title="Collapse controls"
+          onClick={() => setIsCollapsed(true)}
+        >
+          <ChevronUp size={18} />
+        </button>
+      </GlassSurface>
 
-      <div className="repository-picker">
-        <label className="field-label" htmlFor="repository-select">
-          City source
-        </label>
-        <select id="repository-select" value={selectedRepoId} onChange={(event) => onSelectRepository(event.target.value)}>
-          {repositories.map((repository) => (
-            <option key={repository.id} value={repository.id}>
-              {repository.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      <GlassSurface as="section" className="source-console" variant="dock" intensity="strong" radius={18} aria-label="Repository source controls">
+        <div className="repository-picker">
+          <label className="field-label" htmlFor="repository-select">
+            City source
+          </label>
+          <select id="repository-select" value={selectedRepoId} onChange={(event) => onSelectRepository(event.target.value)}>
+            {repositories.map((repository) => (
+              <option key={repository.id} value={repository.id}>
+                {repository.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <form className="import-form" onSubmit={submit} aria-label="Scan a repository">
+          <div className="segmented" aria-label="Import type">
+            <button type="button" className={importType === "github" ? "active" : ""} onClick={() => setImportType("github")}>
+              <Github size={15} />
+              GitHub
+            </button>
+            <button type="button" className={importType === "local" ? "active" : ""} onClick={() => setImportType("local")}>
+              <HardDrive size={15} />
+              Local
+            </button>
+          </div>
+          <input
+            value={urlOrPath}
+            onChange={(event) => setUrlOrPath(event.target.value)}
+            list={importType === "local" ? "local-repositories" : undefined}
+            aria-label={importType === "local" ? "Local repository path" : "GitHub repository URL"}
+          />
+          <datalist id="local-repositories">
+            {localCandidates.map((candidate) => (
+              <option key={candidate.path} value={candidate.path}>
+                {candidate.name}
+              </option>
+            ))}
+          </datalist>
+          <button className="primary-action" type="submit" disabled={scanBusy || !urlOrPath.trim()}>
+            {scanBusy ? <Loader2 className="spin" size={16} /> : <RadioTower size={16} />}
+            {scanBusy ? "Scanning" : "Scan"}
+          </button>
+        </form>
+      </GlassSurface>
 
       {graph ? (
-        <div className="telemetry-grid" aria-label="Repository telemetry">
-          <div>
-            <span>Files</span>
-            <strong>{fileCount}</strong>
+        <GlassSurface as="section" className="telemetry-pod" variant="panel" intensity="medium" radius={18} aria-label="Repository telemetry">
+          <div className="telemetry-grid">
+            <div>
+              <span>Files</span>
+              <strong>{fileCount}</strong>
+            </div>
+            <div>
+              <span>Links</span>
+              <strong>{importEdges}</strong>
+            </div>
+            <div>
+              <span>Lang</span>
+              <strong>{graph.languages.length}</strong>
+            </div>
           </div>
-          <div>
-            <span>Links</span>
-            <strong>{importEdges}</strong>
-          </div>
-          <div>
-            <span>Lang</span>
-            <strong>{graph.languages.length}</strong>
-          </div>
-        </div>
+        </GlassSurface>
       ) : null}
-
-      <form className="import-form" onSubmit={submit} aria-label="Scan a repository">
-        <div className="segmented" aria-label="Import type">
-          <button type="button" className={importType === "github" ? "active" : ""} onClick={() => setImportType("github")}>
-            <Github size={15} />
-            GitHub
-          </button>
-          <button type="button" className={importType === "local" ? "active" : ""} onClick={() => setImportType("local")}>
-            <HardDrive size={15} />
-            Local
-          </button>
-        </div>
-        <input
-          value={urlOrPath}
-          onChange={(event) => setUrlOrPath(event.target.value)}
-          list={importType === "local" ? "local-repositories" : undefined}
-          aria-label={importType === "local" ? "Local repository path" : "GitHub repository URL"}
-        />
-        <datalist id="local-repositories">
-          {localCandidates.map((candidate) => (
-            <option key={candidate.path} value={candidate.path}>
-              {candidate.name}
-            </option>
-          ))}
-        </datalist>
-        <button className="primary-action" type="submit" disabled={scanBusy || !urlOrPath.trim()}>
-          {scanBusy ? <Loader2 className="spin" size={16} /> : <RadioTower size={16} />}
-          {scanBusy ? "Scanning" : "Scan"}
-        </button>
-      </form>
-
-      <div className="status-line">
-        <span className={scan?.status === "failed" ? "status-dot error" : "status-dot"} />
-        <span>{currentStatus}</span>
-      </div>
 
       {topLanguages.length ? (
-        <div className="language-rail" aria-label="Language legend">
-          {topLanguages.map((language) => (
-            <div key={language.language} className="language-row">
-              <span className="language-swatch" style={{ backgroundColor: language.color }} />
-              <span>{language.language}</span>
-              <meter min={0} max={Math.max(...topLanguages.map((item) => item.loc), 1)} value={language.loc} />
-            </div>
-          ))}
-        </div>
+        <GlassSurface as="section" className="language-dock" variant="bar" intensity="subtle" radius={18} aria-label="Language legend">
+          <div className="language-rail">
+            {topLanguages.map((language) => (
+              <div key={language.language} className="language-row">
+                <span className="language-swatch" style={{ backgroundColor: language.color }} />
+                <span>{language.language}</span>
+                <meter min={0} max={Math.max(...topLanguages.map((item) => item.loc), 1)} value={language.loc} />
+              </div>
+            ))}
+          </div>
+        </GlassSurface>
       ) : null}
-    </GlassSurface>
+    </div>
   );
 }
