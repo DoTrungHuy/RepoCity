@@ -1622,6 +1622,58 @@ dd,
   border-color: rgba(189, 82, 99, 0.34);
 }
 
+.toast-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.toast-copy strong,
+.toast-copy span {
+  overflow-wrap: anywhere;
+}
+
+.toast-copy strong {
+  color: currentColor;
+  font-size: 13px;
+}
+
+.toast-copy span {
+  color: rgba(127, 32, 48, 0.82);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.toast-action,
+.toast-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(127, 32, 48, 0.18);
+  border-radius: 999px;
+  color: #7f2030;
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.toast-action {
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.toast-close {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+}
+
+.toast-action:hover,
+.toast-close:hover {
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 6px 18px rgba(127, 32, 48, 0.12);
+}
+
 @keyframes meteorFall {
   0% {
     opacity: 0;

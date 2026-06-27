@@ -9,6 +9,7 @@ interface ControlDeckProps {
   selectedRepoId: string;
   status: string;
   scan?: ScanTask;
+  isImporting?: boolean;
   graph?: RepoGraph;
   onSelectRepository: (repoId: string) => void;
   onImportRepository: (payload: ImportRequest) => void;
@@ -20,6 +21,7 @@ export function ControlDeck({
   selectedRepoId,
   status,
   scan,
+  isImporting = false,
   graph,
   onSelectRepository,
   onImportRepository
@@ -51,6 +53,7 @@ export function ControlDeck({
   const importEdges = graph?.edges.filter((edge) => edge.kind === "imports").length ?? 0;
   const topLanguages = graph?.languages.slice(0, 5) ?? [];
   const currentStatus = scan?.message ?? status;
+  const scanBusy = isImporting || scan?.status === "running" || scan?.status === "queued";
 
   if (isCollapsed) {
     return (
@@ -158,9 +161,9 @@ export function ControlDeck({
             </option>
           ))}
         </datalist>
-        <button className="primary-action" type="submit">
-          {scan?.status === "running" || scan?.status === "queued" ? <Loader2 className="spin" size={16} /> : <RadioTower size={16} />}
-          Scan
+        <button className="primary-action" type="submit" disabled={scanBusy || !urlOrPath.trim()}>
+          {scanBusy ? <Loader2 className="spin" size={16} /> : <RadioTower size={16} />}
+          {scanBusy ? "Scanning" : "Scan"}
         </button>
       </form>
 

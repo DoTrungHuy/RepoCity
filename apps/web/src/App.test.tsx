@@ -79,6 +79,40 @@ describe("App", () => {
     await waitFor(() => expect(screen.getByText("Cloud summaries are disabled.")).toBeInTheDocument());
   });
 
+  it("surfaces graph loading failures with a retry action", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url === "/api/repositories") {
+          return jsonResponse({
+            repositories: [{ id: "sample-vite", name: "vitejs/vite", sourceType: "sample", sourceLabel: "sample" }],
+            localCandidates: []
+          });
+        }
+        if (url === "/api/repositories/sample-vite/graph") {
+          return jsonResponse({ error: "Graph is unavailable." }, 500);
+        }
+        return jsonResponse({ error: "not found" }, 404);
+      })
+    );
+
+    render(<App />);
+    expect(await screen.findByText("City failed to load")).toBeInTheDocument();
+    expect(screen.getByText("Graph is unavailable.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
+  });
+
+  it("surfaces import failures without losing the current city", async () => {
+    render(<App />);
+    expect(await screen.findByTestId("city-scene")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /^scan$/i }));
+
+    expect(await screen.findByText("Scan could not start")).toBeInTheDocument();
+    expect(screen.getByText("not found")).toBeInTheDocument();
+    expect(screen.getByTestId("city-scene")).toBeInTheDocument();
+  });
+
   it("collapses and reopens the repository controls", async () => {
     render(<App />);
     expect(await screen.findByLabelText(/city source/i)).toBeInTheDocument();
